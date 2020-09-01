@@ -18,6 +18,8 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 [![CRAN status](https://www.r-pkg.org/badges/version/FunGenPipe)](https://CRAN.R-project.org/package=FunGenPipe)
+[![Codecov test coverage](https://codecov.io/gh/peterjuv/FunGenPipe/branch/master/graph/badge.svg)](https://codecov.io/gh/peterjuv/FunGenPipe?branch=master)
+[![R build status](https://github.com/peterjuv/FunGenPipe/workflows/R-CMD-check/badge.svg)](https://github.com/peterjuv/FunGenPipe/actions)
 <!-- badges: end -->
 
 The goal of FunGenPipe is to ...
