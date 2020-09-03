@@ -4,7 +4,15 @@
 \alias{boxplotRLE}
 \title{Boxplot RLE (Relative Log Expression) and correlate to RIN}
 \usage{
-boxplotRLE(expLog2, filePath = NULL, RIN = NULL, width = 7, height = 7, ...)
+boxplotRLE(
+  expLog2,
+  filePath = NULL,
+  RIN = NULL,
+  width = 7,
+  height = 7,
+  alpha = 0.5,
+  ...
+)
 }
 \arguments{
 \item{expLog2}{Expression matrix with genes in rows and samples in columns;
@@ -18,6 +26,8 @@ otherwise correlate RLE to a straight line (RLE==1 for all samples)}
 \item{width}{PDF width}
 
 \item{height}{PDF height}
+
+\item{alpha}{Transparency of points, passed to geom_point}
 
 \item{...}{Passed to geom_boxplot}
 }

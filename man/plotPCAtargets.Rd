@@ -18,6 +18,7 @@ plotPCAtargets(
   height = 7,
   stroke = 1,
   guides_fill = "none",
+  alpha = 0.5,
   ...
 )
 }
@@ -49,6 +50,8 @@ as well as color_color and color_fill}
 
 \item{guides_fill}{Default "none"; use "legend" to display it}
 
+\item{alpha}{Transparency of points, passed to geom_point}
+
 \item{...}{Passed to geom_point}
 }
 \value{
@@ -61,7 +64,7 @@ Plot PCA for gene expression and phenotype data
 
 FIX: add return value
 FIX: Discrete scale_color supplied for continuous color variable; scale_color not used
-Fix: code in case that scale_color and scale_fill are not named vectors or NULL
+Fix: case that scale_color and scale_fill are not named vectors or NULL
 Fix scale_size: Error: Discrete value supplied to continuous scale
 Use scale_colour_viridis_c
 }
