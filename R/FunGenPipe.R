@@ -198,7 +198,7 @@ plotPCAtargets <- function(expLog2, targets, shape, color, fill, size,
         mutate(PC1 = PCA$x[,1], PC2 = PCA$x[,2]) %>% 
     {
         ggplot(., aes(PC2, PC1)) +
-        geom_point(aes(shape=!!shape, color=!!color, fill=!!fill, size=!!size), stroke=stroke) +
+        geom_point(aes(shape=!!shape, color=!!color, fill=!!fill, size=!!size), stroke=stroke, ...) +
         ggtitle("PCA plot of log2 expression data") +
         ylab(paste0("PC1, VarExp: ", percentVar[1], "%")) +
         xlab(paste0("PC2, VarExp: ", percentVar[2], "%")) +
@@ -222,7 +222,7 @@ plotPCAtargets <- function(expLog2, targets, shape, color, fill, size,
         dev.off()
     }
     ## return
-    #p
+    p
 }
 
 
