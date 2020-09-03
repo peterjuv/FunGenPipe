@@ -55,10 +55,10 @@ getColPats <- function(eset) {
 #' @param namesFrom Either NULL for using variables that share suffixes with colors
 #'                  or NA for using preset names of colors
 #'                  or a variable from targets that is used for setting names to colors
-#' @param collapsed Returns unique names and associated colors;
-#'                  Note that colors may be dropped, see the last example
+#' @param unique If TRUE, returns unique names and associated colors;
+#'               Note that colors may be dropped, see the last example
 #' @return List of colors of length equal to the number of rows;
-#'         If collapse=TRUE, each list is truncated to unique names
+#'         If unique=TRUE, each list is truncated to unique names
 #' @examples
 #' \donotrun{
 #' # default parameters
@@ -68,12 +68,12 @@ getColPats <- function(eset) {
 #' getColPats2(targets)
 #' # using namesFrom
 #' getColPats2(targets, namesFrom=c)
-#' # using collapse
-#' getColPats2(targets, collapse=TRUE)
-#' getColPats2(targets, namesFrom=c, collapse=TRUE)
+#' # using unique
+#' getColPats2(targets, unique=TRUE)
+#' getColPats2(targets, namesFrom=c, unique=TRUE)
 #' }
 #' @export
-getColPats2 <- function(targets, colorsFrom="color_", namesFrom=NULL, collapse=FALSE) {
+getColPats2 <- function(targets, colorsFrom="color_", namesFrom=NULL, unique=FALSE) {
     require(magrittr)
     require(dplyr)
     require(assertthat)
@@ -93,7 +93,7 @@ getColPats2 <- function(targets, colorsFrom="color_", namesFrom=NULL, collapse=F
         ncols <- map2(cols, targets %>% select(all_of(sub(colorsFrom, "", colnames(cols)))), setNames)
     else
         ncols <- map2(cols, targets %>% select(!!namesFrom), setNames)
-    if (collapse)
+    if (unique)
         ncols %<>% map(~keep(., !duplicated(names(.))))
     ncols
 }
@@ -210,10 +210,10 @@ plotPCAtargets <- function(expLog2, targets, shape, color, fill, size,
     }
     if (!quo_is_null(scale_color))
         if (!is.numeric(pull(p$data, !!color)))
-            p %<>% { . + scale_color_manual(values = unique(pull(.$data, !!scale_color)))}
+            p %<>% { . + scale_color_manual(values = getColPats2(pull(.$data, !!scale_color), unique=TRUE))}
         else
             warning("Discrete scale_color supplied for continuous color variable; scale_color not used")
-    if (!quo_is_null(scale_fill))  p %<>% { . + scale_fill_manual(values = unique(pull(.$data, !!scale_fill)))}
+    if (!quo_is_null(scale_fill))  p %<>% { . + scale_fill_manual(values = getColPats2(pull(.$data, !!scale_fill), unique=TRUE))}
     #if (!quo_is_null(scale_fill))  p %<>% { . + scale_fill_manual(pull(.$data, !!scale_fill))}
     ## PDF
     if (!is.null(filePath)) {
