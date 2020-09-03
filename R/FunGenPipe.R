@@ -61,13 +61,17 @@ getColPats <- function(eset) {
 #'         If unique=TRUE, each list is truncated to unique names
 #' @examples
 #' \donotrun{
-#' # default parameters
-#' targets <- tibble(color_a=c(1,1,2), color_b=c("3"=3,"4"=4,"4"=4), a=c(11,11,22), b=c(33,33,44), c=c(55,66,55))
-#' names(targets$color_a)
-#' names(targets$color_b)
+#' (targets <- tibble(color_aa=c(1,1,2), color_bb=c("3"=3,"4"=4,"4"=4), aa=c(11,11,22), bb=c(33,33,44), cc=c(55,66,55)))
+#' names(targets$color_aa)
+#' names(targets$color_bb)
 #' getColPats2(targets)
 #' # using namesFrom
-#' getColPats2(targets, namesFrom=c)
+#' getColPats2(targets, namesFrom=NULL)
+#' getColPats2(targets, namesFrom=cc)
+#' cc <- NULL
+#' getColPats2(targets, namesFrom=cc)
+#' d <- NULL
+#' getColPats2(targets, namesFrom=d)
 #' # using unique
 #' getColPats2(targets, unique=TRUE)
 #' getColPats2(targets, namesFrom=c, unique=TRUE)
@@ -83,16 +87,18 @@ getColPats2 <- function(targets, colorsFrom="color_", namesFrom=NULL, unique=FAL
     namesFrom <- enquo(namesFrom)
     # TOFIX assertthat::assert_that(quo_is_null(namesFrom) | assertthat::has_name(targets, !!namesFrom))
     cols <- targets %>% 
-        select(starts_with(colorsFrom))
+        select(starts_with(colorsFrom)) %>% 
+        rename_with(~sub(colorsFrom, "", .))
     # case_when(
     #     quo_is_null(namesFrom) ~ map2(cols, targets %>% select(all_of(sub(colorsFrom, "", colnames(cols)))), setNames),
     #     #quo_is_na(namesFrom) ~ map(cols, identity),
     #     !quo_is_null(namesFrom) ~ map2(cols, targets %>% select(!!namesFrom), setNames)
     # ) %>% as_tibble
     if (quo_is_null(namesFrom))
-        ncols <- map2(cols, targets %>% select(all_of(sub(colorsFrom, "", colnames(cols)))), setNames)
+        names <- targets %>% select(all_of(sub(colorsFrom, "", colnames(cols))))
     else
-        ncols <- map2(cols, targets %>% select(!!namesFrom), setNames)
+        names <- targets %>% select(!!namesFrom)
+    ncols <- map2(cols, names, setNames)
     if (unique)
         ncols %<>% map(~keep(., !duplicated(names(.))))
     ncols
@@ -111,10 +117,11 @@ getColPats2 <- function(targets, colorsFrom="color_", namesFrom=NULL, unique=FAL
 #'  otherwise correlate RLE to a straight line (RLE==1 for all samples)
 #' @param width PDF width
 #' @param height PDF height
+#' @param alpha Transparency of points, passed to geom_point
 #' @param ... Passed to geom_boxplot
 #' @return ggplot2 object and PDF if filePath is given
 #' @export
-boxplotRLE <- function(expLog2, filePath=NULL, RIN=NULL, width=7, height=7, ...) {
+boxplotRLE <- function(expLog2, filePath=NULL, RIN=NULL, width=7, height=7, alpha=0.5, ...) {
     require(Biobase)
     require(tidyverse)
     require(magrittr)
@@ -134,7 +141,7 @@ boxplotRLE <- function(expLog2, filePath=NULL, RIN=NULL, width=7, height=7, ...)
         myCols <- myHelpers::brewPalCont(rep(5,dim(expLog2)[[2]]), n=9, name="OrRd", digits=0)
     }
     prle <- ggplot2::ggplot(RLE_data_long, aes(Sample, log2_expression_deviation)) + 
-        geom_boxplot(outlier.shape = NA, alpha=0.3, fill=myCols, ...) +
+        geom_boxplot(outlier.shape = NA, alpha=alpha, fill=myCols, ...) +
         scale_fill_gradient() +
         ylim(c(-2, 2)) +
         theme(axis.text.x = element_text(colour = "aquamarine4", angle = 60, size = 6.5, hjust = 1, face = "bold"),
@@ -149,11 +156,61 @@ boxplotRLE <- function(expLog2, filePath=NULL, RIN=NULL, width=7, height=7, ...)
     prle
 }
 
+#' Plot heatmap(s) of gene expression using different distance calculation methods.
+#' 
+#' @param expLog2 Expression matrix with genes in rows and samples in columns; 
+#'  columns must be named
+#' @param methods List of methods for distance calulation, individually passed to stats::dist(..., method)
+#' @param targets Phenotype data with columns with colors, i.e. color_Sex
+#' @param colorsFrom String passed to getColPats2
+#' @param namesFrom Variable passed to getColPats2
+#' @param filePath If given, output a PDF
+#' @param width PDF width
+#' @param height PDF height
+#' @param treeheight_row Passed to pheatmap; default 0; 50 for pheatmap
+#' @param ... Passed to pheatmap
+#' @return ggplot2 object and PDF if filePath is given
+#' @export
+pheatmapTargets <- function(expLog2, targets, methods=c("manhattan", "euclidean"),
+    colorsFrom="color_", namesFrom=NULL, filePath=NULL, width=7, height=7, treeheight_row = 0, ...) {
+    require(pheatmap)
+    require(stringr)
+    require(assertthat)
+    namesFrom <- enquo(namesFrom)
+    p <- list()
+    for (method in methods) {
+        dists <- as.matrix(dist(t(expLog2), method=method))
+        rownames(dists) <- row.names(targets)
+        colnames(dists) <- NULL
+        diag(dists) <- NA
+        hmcol <- colorRampPalette(RColorBrewer::brewer.pal(9, "YlOrRd"))(255)
+        annRows <- getColPats2(targets, colorsFrom=colorsFrom, namesFrom=!!namesFrom)
+        annRowsN <- as.data.frame(lapply(annRows, FUN=names))
+        row.names(annRowsN) <- row.names(targets)
+        p[[method]] <- pheatmap(dists, col = (hmcol), 
+           annotation_row = annRowsN,
+           annotation_colors = getColPats2(targets, unique=TRUE, colorsFrom=colorsFrom, namesFrom=!!namesFrom),
+           treeheight_row = treeheight_row,
+           legend_breaks = c(min(dists, na.rm = TRUE), max(dists, na.rm = TRUE)), 
+           legend_labels = (c("similar", "diverse")),
+           main = paste(str_to_title(method), "heatmap for", dim(expLog2)[[1]], "probes"), ...)
+    }
+    ## PDF
+    if (!is.null(filePath)) {
+        pdf(filePath, width=width, height=height)
+        print(p)
+        dev.off()
+    }
+    ## return
+    p
+}
+
+
 #' Plot PCA for gene expression and phenotype data
 #' 
 #' @param expLog2 Gene expression matrix in log2 scale
 #' @param targets Phenotype data with columns shape, color, fill, size, 
-#'  as well as color_color and color_fill
+#'                as well as color_color and color_fill
 #' @param shape Variable from targets for ggplot2::aes
 #' @param color Variable from targets for ggplot2::aes
 #' @param fill Variable from targets for ggplot2::aes
@@ -165,6 +222,7 @@ boxplotRLE <- function(expLog2, filePath=NULL, RIN=NULL, width=7, height=7, ...)
 #' @param height PDF height
 #' @param stroke Line thickness, passed to geom_point
 #' @param guides_fill Default "none"; use "legend" to display it
+#' @param alpha Transparency of points, passed to geom_point
 #' @param ... Passed to geom_point
 #' @return ggplot2 object and PDF if filePath is given
 #' @section TODO:
@@ -178,7 +236,7 @@ boxplotRLE <- function(expLog2, filePath=NULL, RIN=NULL, width=7, height=7, ...)
 #' @export
 plotPCAtargets <- function(expLog2, targets, shape, color, fill, size,
     scale_color = NULL, scale_fill = NULL, filePath=NULL, width=7, height=7, stroke=1, 
-    guides_fill = "none", ...) {
+    guides_fill = "none",  alpha=0.5, ...) {
     require(rlang)
     require(ggplot2)
     require(assertthat)
@@ -198,7 +256,7 @@ plotPCAtargets <- function(expLog2, targets, shape, color, fill, size,
         mutate(PC1 = PCA$x[,1], PC2 = PCA$x[,2]) %>% 
     {
         ggplot(., aes(PC2, PC1)) +
-        geom_point(aes(shape=!!shape, color=!!color, fill=!!fill, size=!!size), stroke=stroke, ...) +
+        geom_point(aes(shape=!!shape, color=!!color, fill=!!fill, size=!!size), stroke=stroke, alpha=alpha, ...) +
         ggtitle("PCA plot of log2 expression data") +
         ylab(paste0("PC1, VarExp: ", percentVar[1], "%")) +
         xlab(paste0("PC2, VarExp: ", percentVar[2], "%")) +
