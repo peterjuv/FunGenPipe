@@ -1,23 +1,78 @@
-## 2020-07-17 Function Genomics pipelines by peter.juvan@gmail.com
+## 2020-07-17 Function Genomics pipeline by peter.juvan@gmail.com
 ##
 
-#' Test function
+#' Get color patterns with names from another column from ExpressionSet slot phenoData.
+#' 
+#' Returns columns from phenoData that start with "color_" and have their suffix in common with another column;
+#' Names of colors are set from the associated column, e.g., list(color_Sex = setNames(color_Sex, Sex), ...)
+#' @param eset
+#' @return List of colors, each of length equal to the number of rows in phenoData
+#' @example
+#' /donotrun{
+#' getColPats(Biobase::pData(dataRaw/eset))
+#' getColPats(Biobase::pData(eset))
+#' }
+#' @section Old implementation:
+#' getColPats <- function(eset) {
+#'     require(assertthat)
+#'     require(Biobase)
+#'     require(tibble)
+#'     assertthat::has_attr(eset, "phenoData")
+#'     colPats <- list()
+#'     aNames <- colnames(Biobase::pData(eset))
+#'     cNames <- aNames[grep("^color_", aNames, perl=TRUE)]
+#'     fNames <- sub("^color_", "", cNames)
+#'     for (i in seq_len(length(fNames))) {
+#'         colPats[[fNames[i]]] <- setNames(Biobase::pData(eset)[[cNames[i]]], Biobase::pData(eset)[[fNames[i]]])
+#'     }
+#'     colPats
+#' }
 #' @export
-testNewFuncExport <- function(x) {x}
+getColPats <- function(eset) {
+    require(assertthat)
+    require(Biobase)
+    require(rlang)
+    assertthat::has_attr(eset, "phenoData")
+    cols <- Biobase::pData(eset) %>% 
+        as_tibble %>% 
+        select(starts_with("color_"))
+    names <- Biobase::pData(eset) %>% 
+        as_tibble %>%
+        select(all_of(sub("color_", "", colnames(cols))))
+    map2(cols, names, setNames)
+}
 
-#' Get color patterns for factors from Biobase::pData(dataRaw/eset) (i.e. targets)
-#' Factors and colors share suffix in their name
-#' Colors are prefixed with "color_", e.g. "color_Sex"
+
+#' Get color patterns with names from another column from targets
+#' 
+#' New implementation allowing for alternative naming using parameter namesFrom
+#' Returns columns from phenoData that start with "color_" and have their suffix in common with another column;
+#' Names of colors are set from the associated column, e.g., tibble(color_Sex = setNames(color_Sex, Sex), ...)
+#' @param targets Table with columns names 'color_.*'
+#' @param namesFrom Variable from targets used for setting names to colors;
+#'                  default is NULL, which uses names from variables that share a suffx
+#' @return Tibble of colors of equal length equal to targetsthe number of rows in phenoData
+#' @example
+#' /donotrun{
+#' getColPats2(targets)
+#' }
 #' @export
-getColPats <- function(featureSet) {
-    colPats <- list()
-    aNames <- colnames(Biobase::pData(featureSet))
-    cNames <- aNames[grep("^color_", aNames, perl=TRUE)]
-    fNames <- sub("^color_", "", cNames)
-    for (i in seq_len(length(fNames))) {
-        colPats[[fNames[i]]] <- setNames(Biobase::pData(featureSet)[[cNames[i]]], Biobase::pData(featureSet)[[fNames[i]]])
-    }
-    colPats
+getColPats2 <- function(targets, namesFrom=NULL) {
+    require(assertthat)
+    require(Biobase)
+    require(rlang)
+    targets %<>% as_tibble
+    namesFrom <- enquo(namesFrom)
+    # TOFIX assertthat::assert_that(quo_is_null(namesFrom) | assertthat::has_name(targets, !!namesFrom))
+    cols <- targets %>% 
+        select(starts_with("color_"))
+    if (quo_is_null(namesFrom))
+        names <- targets %>% 
+            select(all_of(sub("color_", "", colnames(cols))))
+    else
+        names <- targets %>% 
+            select(!!namesFrom)
+    map2(cols, names, setNames) %>% as_tibble
 }
 
 

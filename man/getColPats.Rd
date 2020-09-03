@@ -2,14 +2,32 @@
 % Please edit documentation in R/FunGenPipe.R
 \name{getColPats}
 \alias{getColPats}
-\title{Get color patterns for factors from Biobase::pData(dataRaw/eset) (i.e. targets)
-Factors and colors share suffix in their name
-Colors are prefixed with "color_", e.g. "color_Sex"}
+\title{Get color patterns with names from another column from ExpressionSet slot phenoData.}
 \usage{
-getColPats(featureSet)
+getColPats(eset)
+}
+\value{
+List of colors, each of length equal to the number of rows in phenoData
 }
 \description{
-Get color patterns for factors from Biobase::pData(dataRaw/eset) (i.e. targets)
-Factors and colors share suffix in their name
-Colors are prefixed with "color_", e.g. "color_Sex"
+Returns columns from phenoData that start with "color_" and have their suffix in common with another column;
+Names of colors are set from the associated column, e.g., list(color_Sex = setNames(color_Sex, Sex), ...)
 }
+\section{Old implementation}{
+
+getColPats <- function(eset) {
+require(assertthat)
+require(Biobase)
+require(tibble)
+assertthat::has_attr(eset, "phenoData")
+colPats <- list()
+aNames <- colnames(Biobase::pData(eset))
+cNames <- aNames\link{grep("^color_", aNames, perl=TRUE)}
+fNames <- sub("^color_", "", cNames)
+for (i in seq_len(length(fNames))) {
+colPats[[fNames\link{i}]] <- setNames(Biobase::pData(eset)[[cNames\link{i}]], Biobase::pData(eset)[[fNames\link{i}]])
+}
+colPats
+}
+}
+

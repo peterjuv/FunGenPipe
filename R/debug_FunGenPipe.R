@@ -1,18 +1,33 @@
 if (FALSE) {
-    outPath <- file.path(resultDirOut, "3.PGSEA.KEGGREST.limma-comparisons")
-    gscPGSEA<-gscKeggrestRno
-    esetsPGSEA<-esetsKeggrest
-    fitsPGSEA<-fitsKeggrest
-    comparisons <- comparisons
-    setIDCol="KeggID"
-    useNameCol="keggPathNameRno2"
-    fitsProbes<-fits
-    annsProbes<-annPrb
-    pVals <- pVals
-    targetsOrder <- targetsOrder
-    pValDE=0.05
-    maxHeatMapProbes=50
-    compName <- "dH_S.tN.gM~dtgFstat"
+
+## getWriteHeatmap_PgseaTTcomparisons
+outPath <- file.path(resultDirOut, "3.PGSEA.KEGGREST.limma-comparisons")
+gscPGSEA<-gscKeggrestRno
+esetsPGSEA<-esetsKeggrest
+fitsPGSEA<-fitsKeggrest
+comparisons <- comparisons
+setIDCol="KeggID"
+useNameCol="keggPathNameRno2"
+fitsProbes<-fits
+annsProbes<-annPrb
+pVals <- pVals
+targetsOrder <- targetsOrder
+pValDE=0.05
+maxHeatMapProbes=50
+compName <- "dH_S.tN.gM~dtgFstat"
+
+## getColPats
+aaa<-getColPats(eset)
+for (aa in aaa) print(names(aa))
+
+## getColPats2
+ccc<-getColPats2(targets, HybName)
+ccc
+for (cc in ccc) print(names(cc))
+bbb<-getColPats2(targets)
+bbb
+for (bb in bbb) print(names(bb))
+
 }
 
     #' REMOVED: Input/Output: eset with Biobase::fData with 3 columns: PROBEID SYMBOL ENTREZID
