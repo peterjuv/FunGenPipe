@@ -28,6 +28,26 @@ bbb<-getColPats2(targets)
 bbb
 for (bb in bbb) print(names(bb))
 
+## getColPats2 extended parameters
+# default parameters
+targets <- tibble(color_a=c(1,2,3), color_b=c("4"=4,"5"=5,"6"=6), a=c(11,22,33), b=c(44,55,66), c=c(77,88,99))
+names(targets$color_a)
+names(targets$color_c)
+getColPats2(targets)
+names(getColPats2(targets)$color_a)
+names(getColPats2(targets)$color_b)
+# using namesFrom
+getColPats2(targets, namesFrom=c)
+names(getColPats2(targets, namesFrom=c)$color_a)
+names(getColPats2(targets, namesFrom=c)$color_b)
+# using collapse=TRUE
+targets
+names(targets$color_b)
+colorsFrom="color_"
+namesFrom=NULL
+collapse=FALSE
+getColPats2(targets, namesFrom=a)
+map(getColPats2(targets), ~pluck(.))#, unique(names(.))))
 }
 
     #' REMOVED: Input/Output: eset with Biobase::fData with 3 columns: PROBEID SYMBOL ENTREZID

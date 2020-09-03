@@ -29,9 +29,11 @@
 #' }
 #' @export
 getColPats <- function(eset) {
+    require(dplyr)
     require(assertthat)
     require(Biobase)
     require(rlang)
+    require(purrr)
     assertthat::has_attr(eset, "phenoData")
     cols <- Biobase::pData(eset) %>% 
         as_tibble %>% 
@@ -48,31 +50,52 @@ getColPats <- function(eset) {
 #' New implementation allowing for alternative naming using parameter namesFrom
 #' Returns columns from phenoData that start with "color_" and have their suffix in common with another column;
 #' Names of colors are set from the associated column, e.g., tibble(color_Sex = setNames(color_Sex, Sex), ...)
-#' @param targets Table with columns names 'color_.*'
-#' @param namesFrom Variable from targets used for setting names to colors;
-#'                  default is NULL, which uses names from variables that share a suffx
-#' @return Tibble of colors of equal length equal to targetsthe number of rows in phenoData
-#' @example
-#' /donotrun{
+#' @param targets Table with columns names with a prefix colorsFrom='color_'
+#' @param colorsFrom String prefix of names of columns with colors, default 'color_'
+#' @param namesFrom Either NULL for using variables that share suffixes with colors
+#'                  or NA for using preset names of colors
+#'                  or a variable from targets that is used for setting names to colors
+#' @param collapsed Returns unique names and associated colors;
+#'                  Note that colors may be dropped, see the last example
+#' @return List of colors of length equal to the number of rows;
+#'         If collapse=TRUE, each list is truncated to unique names
+#' @examples
+#' \donotrun{
+#' # default parameters
+#' targets <- tibble(color_a=c(1,1,2), color_b=c("3"=3,"4"=4,"4"=4), a=c(11,11,22), b=c(33,33,44), c=c(55,66,55))
+#' names(targets$color_a)
+#' names(targets$color_b)
 #' getColPats2(targets)
+#' # using namesFrom
+#' getColPats2(targets, namesFrom=c)
+#' # using collapse
+#' getColPats2(targets, collapse=TRUE)
+#' getColPats2(targets, namesFrom=c, collapse=TRUE)
 #' }
 #' @export
-getColPats2 <- function(targets, namesFrom=NULL) {
+getColPats2 <- function(targets, colorsFrom="color_", namesFrom=NULL, collapse=FALSE) {
+    require(magrittr)
+    require(dplyr)
     require(assertthat)
-    require(Biobase)
     require(rlang)
+    require(purrr)
     targets %<>% as_tibble
     namesFrom <- enquo(namesFrom)
     # TOFIX assertthat::assert_that(quo_is_null(namesFrom) | assertthat::has_name(targets, !!namesFrom))
     cols <- targets %>% 
-        select(starts_with("color_"))
+        select(starts_with(colorsFrom))
+    # case_when(
+    #     quo_is_null(namesFrom) ~ map2(cols, targets %>% select(all_of(sub(colorsFrom, "", colnames(cols)))), setNames),
+    #     #quo_is_na(namesFrom) ~ map(cols, identity),
+    #     !quo_is_null(namesFrom) ~ map2(cols, targets %>% select(!!namesFrom), setNames)
+    # ) %>% as_tibble
     if (quo_is_null(namesFrom))
-        names <- targets %>% 
-            select(all_of(sub("color_", "", colnames(cols))))
+        ncols <- map2(cols, targets %>% select(all_of(sub(colorsFrom, "", colnames(cols)))), setNames)
     else
-        names <- targets %>% 
-            select(!!namesFrom)
-    map2(cols, names, setNames) %>% as_tibble
+        ncols <- map2(cols, targets %>% select(!!namesFrom), setNames)
+    if (collapse)
+        ncols %<>% map(~keep(., !duplicated(names(.))))
+    ncols
 }
 
 
@@ -147,7 +170,7 @@ boxplotRLE <- function(expLog2, filePath=NULL, RIN=NULL, width=7, height=7, ...)
 #' @section TODO:
 #'  FIX: add return value
 #'  FIX: Discrete scale_color supplied for continuous color variable; scale_color not used
-#'  Fix: code in case that scale_color and scale_fill are not named vectors or NULL
+#'  Fix: case that scale_color and scale_fill are not named vectors or NULL
 #'  Fix scale_size: Error: Discrete value supplied to continuous scale
 #'  Use scale_colour_viridis_c
 #' @section Implementation:
