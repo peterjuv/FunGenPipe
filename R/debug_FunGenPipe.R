@@ -138,3 +138,4 @@ names(annotation_colors)
     #     Biobase::fData(esetSym) <- annSEcollapsedSym[Biobase::featureNames(esetSym),]
     #     esetSym
     # }
+}
