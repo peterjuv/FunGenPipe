@@ -176,6 +176,8 @@ pheatmapTargets <- function(expLog2, targets, methods=c("manhattan", "euclidean"
     require(pheatmap)
     require(stringr)
     require(assertthat)
+    require(rlang)
+    require(gtable)
     namesFrom <- enquo(namesFrom)
     p <- list()
     for (method in methods) {
@@ -187,18 +189,25 @@ pheatmapTargets <- function(expLog2, targets, methods=c("manhattan", "euclidean"
         annRows <- getColPats2(targets, colorsFrom=colorsFrom, namesFrom=!!namesFrom)
         annRowsN <- as.data.frame(lapply(annRows, FUN=names))
         row.names(annRowsN) <- row.names(targets)
-        p[[method]] <- pheatmap(dists, col = (hmcol), 
+        p[[method]] <- pheatmap(
+           dists,
+           col = (hmcol), 
            annotation_row = annRowsN,
            annotation_colors = getColPats2(targets, unique=TRUE, colorsFrom=colorsFrom, namesFrom=!!namesFrom),
            treeheight_row = treeheight_row,
            legend_breaks = c(min(dists, na.rm = TRUE), max(dists, na.rm = TRUE)), 
            legend_labels = (c("similar", "diverse")),
-           main = paste(str_to_title(method), "heatmap for", dim(expLog2)[[1]], "probes"), ...)
+           main = paste(str_to_title(method), "heatmap for", dim(expLog2)[[1]], "probes"), 
+           silent=TRUE,
+           ...)$gtable
     }
     ## PDF
     if (!is.null(filePath)) {
         pdf(filePath, width=width, height=height)
-        print(p)
+        for (p1 in p) {
+            grid.newpage()
+            grid.draw(p1)
+        }
         dev.off()
     }
     ## return
