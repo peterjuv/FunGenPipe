@@ -1,13 +1,31 @@
-## 2020-07-17 Function Genomics pipeline by peter.juvan@gmail.com
-##
+#' FunGenPipe: Package of tools for building Function Genomics pipelines
+#'
+#' Package of tools for building Function Genomics pipelines
+#' 
+#' @author Peter Juvan, \email{peter.juvan@gmail.com}
+#' @section Meta-data (targets):
+#' Functions for manipulating colors in targets.
+#' @section Plot data:
+#' boxplotRLE
+#' @section Plot data using targets:
+#' pheatmapTargets
+#' plotPCAtargets
+#' @section From Osijek_HFHSD:
+#' For KBlag_doxy_Cla.R
+#' @section
+#' @docType package
+#' @name FunGenPipe
+#' @import myHelpers
+NULL
 
+ 
 #' Get color patterns with names from another column from ExpressionSet slot phenoData.
 #' 
 #' Returns columns from phenoData that start with "color_" and have their suffix in common with another column;
 #' Names of colors are set from the associated column, e.g., list(color_Sex = setNames(color_Sex, Sex), ...)
-#' @param eset
+#' @param eset ExpressionSet
 #' @return List of colors, each of length equal to the number of rows in phenoData
-#' @example
+#' @examples
 #' /donotrun{
 #' getColPats(Biobase::pData(dataRaw/eset))
 #' getColPats(Biobase::pData(eset))
@@ -50,6 +68,8 @@ getColPats <- function(eset) {
 #' New implementation allowing for alternative naming using parameter namesFrom
 #' Returns columns from phenoData that start with "color_" and have their suffix in common with another column;
 #' Names of colors are set from the associated column, e.g., tibble(color_Sex = setNames(color_Sex, Sex), ...)
+#' At least 2 columns are required, e.g. Var and color_Var; both 
+#' 
 #' @param targets Table with columns names with a prefix colorsFrom='color_'
 #' @param colorsFrom String prefix of names of columns with colors, default 'color_'
 #' @param namesFrom Either NULL for using variables that share suffixes with colors
@@ -57,8 +77,10 @@ getColPats <- function(eset) {
 #'                  or a variable from targets that is used for setting names to colors
 #' @param unique If TRUE, returns unique names and associated colors;
 #'               Note that colors may be dropped, see the last example
-#' @return List of colors of length equal to the number of rows;
-#'         If unique=TRUE, each list is truncated to unique names
+#' @param pullVar A variable from targets, e.g. Sex
+#' @return Named list of named colors for each variable from targets with an associated color.
+#'         The lenght of each list is equal to the number of rows or truncated to unique names if unique=TRUE.
+#'         If pullVar given, returns colors for a single variable from targets 
 #' @examples
 #' \donotrun{
 #' (targets <- tibble(color_aa=c(1,1,2), color_bb=c("3"=3,"4"=4,"4"=4), aa=c(11,11,22), bb=c(33,33,44), cc=c(55,66,55)))
@@ -77,7 +99,7 @@ getColPats <- function(eset) {
 #' getColPats2(targets, namesFrom=c, unique=TRUE)
 #' }
 #' @export
-getColPats2 <- function(targets, colorsFrom="color_", namesFrom=NULL, unique=FALSE) {
+getColPats2 <- function(targets, colorsFrom="color_", namesFrom=NULL, unique=FALSE, pullVar=NULL) {
     require(magrittr)
     require(dplyr)
     require(assertthat)
@@ -85,6 +107,7 @@ getColPats2 <- function(targets, colorsFrom="color_", namesFrom=NULL, unique=FAL
     require(purrr)
     targets %<>% as_tibble
     namesFrom <- enquo(namesFrom)
+    pullVar <- enquo(pullVar)
     # TOFIX assertthat::assert_that(quo_is_null(namesFrom) | assertthat::has_name(targets, !!namesFrom))
     cols <- targets %>% 
         select(starts_with(colorsFrom)) %>% 
@@ -99,9 +122,19 @@ getColPats2 <- function(targets, colorsFrom="color_", namesFrom=NULL, unique=FAL
     else
         names <- targets %>% select(!!namesFrom)
     ncols <- map2(cols, names, setNames)
-    if (unique)
-        ncols %<>% map(~keep(., !duplicated(names(.))))
-    ncols
+    if (!quo_is_null(pullVar))
+    {
+        ncol <- ncols %>% as_tibble %>% pull(!!pullVar)
+        if (unique)
+            ncol <- ncol[!duplicated(names(ncol))]
+        return(ncol)
+    }
+    else
+    {
+        if (unique)
+            ncols %<>% map(~keep(., !duplicated(names(.))))
+        return(ncols)
+    }
 }
 
 
@@ -293,6 +326,126 @@ plotPCAtargets <- function(expLog2, targets, shape, color, fill, size,
 }
 
 
+#' Plot PCA for gene expression (expLog2) and phenotype data (targets)
+#' 
+#' Colnames of expLog2 should be equal as rownames from targets.
+#' Up to 4 variables from targets can be used for color, fill, shape and size.
+#' Colors and fill of points is collected from targets using variable names with a prefix colorsFrom (default: "color_").
+#' Continuous variables may be used; colors from targets are nor used thus.
+#' Shape for a continuous variable must not be used together with fill.
+#' 
+#' @param expLog2 Gene expression matrix in log2 scale
+#' @param targets Phenotype data with columns shape, color, fill, size, 
+#'                as well as color_color and color_fill
+#' @param shape Variable from targets for ggplot2::aes
+#' @param color Variable from targets for ggplot2::aes
+#' @param fill Variable from targets for ggplot2::aes
+#' @param size Variable from targets for ggplot2::aes
+#' @param colorsFrom Character prefix of variable names from targets with colors
+#' @param filePath PDF path/filename.pdf; default NULL
+#' @param width PDF width
+#' @param height PDF height
+#' @param stroke Line thickness, passed to geom_point
+#' @param alpha Transparency of points, passed to geom_point
+#' @param sizeUniform Integer point size, used when size parameter is NULL; default 4
+#' @param sizeRange Integer c(min,max) for scaling point size; used when size parameter is given
+#' @param ... Passed to geom_point
+#' @return ggplot2 object and PDF if filePath is given
+#' @section TODO:
+#'  FIX: add guides_*
+#'  FIX: Discrete color_targets supplied for continuous color variable; color_targets not used
+#'  Fix scale_size: Error: Discrete value supplied to continuous scale
+#'  Consider using scale_colour_viridis_c
+#' @section Implementation:
+#' Put ggplot() inside {} to be able to access data using dot (.), e.g. mutata(...) %>% { ggplot(., ...) }
+#' Access data of an existing ggplot using .$data inside {}, e.g. { . + scale_color_manual(..., .$data) }
+#' @export
+plotPCAtargets2 <- function(expLog2, targets, shape = NULL, color = NULL, fill = NULL, size = NULL,
+    colorsFrom = "color_", filePath = NULL, width = 7, height = 7, 
+    stroke = 1, alpha = 0.75, sizeUniform = 4, sizeRange = c(3,5), ...) {
+    require(rlang)
+    require(ggplot2)
+    require(assertthat)
+    require(magrittr)
+    require(myHelpers)
+    assertthat::are_equal(dim(expLog2)[[2]], dim(targets)[[1]])
+    assertthat::are_equal(colnames(expLog2), rownames(targets))
+    ## enquo vars for aes
+    varsAes <- enquos(shape = shape, color = color, fill = fill, size = size, .ignore_empty = "all")
+    varsAesNotNull <- varsAes[map_lgl(varsAes, ~!quo_is_null(.x))]
+    callAes <- call2("aes", !!!varsAesNotNull)
+    # PCA
+    PCA <- prcomp(t(expLog2), scale = FALSE)
+    percentVar <- round(100*PCA$sdev^2/sum(PCA$sdev^2),1)
+    sd_ratio <- sqrt(percentVar[2] / percentVar[1])
+    ## plot
+    p <- targets %>% 
+        as_tibble %>% 
+        mutate(PC1 = PCA$x[,1], PC2 = PCA$x[,2]) %>% 
+    {
+        ggplot(., aes(PC2, PC1)) +
+        geom_point(mapping=eval_tidy(callAes), stroke=stroke, alpha=alpha, ...) +
+        ggtitle("PCA plot") +
+        ylab(paste0("PC1, VarExp: ", percentVar[1], "%")) +
+        xlab(paste0("PC2, VarExp: ", percentVar[2], "%")) +
+        theme(plot.title = element_text(hjust = 0.5))+
+        coord_fixed(ratio = sd_ratio)
+    }
+    # shape
+    if (!quo_is_null(enquo(shape))) {
+        if (!is.numeric(pull(p$data, !!enquo(shape))))
+            p %<>%  { . + 
+                scale_shape_manual(values = c(21:25, 0:14)[1:length(unique(pull(.$data, {{shape}})))])
+            }
+        else {
+            assertthat::assert_that(quo_is_null(enquo(fill)), msg = "Using fill together with shape for a continuous variable is not implememnted.")
+            warn("Warning: shape for a continuous variable must not be used together with fill.")
+            p <- p + scale_shape_binned(solid = FALSE)
+        }
+        p <- p + guides(shape = guide_legend(override.aes = list(alpha = 1, size = sizeUniform)))
+    }
+    else 
+        p$layers[[1]]$aes_params$shape = 21
+    # colors
+    if (!quo_is_null(enquo(color))) {
+        if (!is.numeric(pull(p$data, !!enquo(color))))
+            p %<>% { . + 
+                scale_color_manual(values = defactorChr(getColPats2(.$data, colorsFrom=colorsFrom, unique=TRUE, pullVar={{color}})))
+            }
+        else 
+            warning("Cannot use discrete colors for continuous color variable")
+        p <- p + guides(color = guide_legend(override.aes = list(alpha = 1, size = sizeUniform, shape=21)))
+    }
+    # fill
+    if (!quo_is_null(enquo(fill))) {
+        if (!is.numeric(pull(p$data, !!enquo(fill)))) 
+            p %<>% { . + 
+                scale_fill_manual(values = defactorChr(getColPats2(.$data, colorsFrom=colorsFrom, unique=TRUE, pullVar={{fill}})))
+            }
+        else 
+            warning("Cannot use discrete colors for continuous fill variable")
+        p <- p + guides(fill = guide_legend(override.aes = list(alpha = 1, size = sizeUniform, shape=21)))
+    }
+    # size
+    if (quo_is_null(enquo(size))) 
+        p$layers[[1]]$aes_params$size = sizeUniform
+    else  {
+        if (is.numeric(pull(p$data, !!enquo(size)))) 
+            p <- p + scale_size(range = sizeRange)
+        else  
+            p <- p + scale_size_discrete(range = sizeRange)
+        p <- p + guides(size = guide_legend(override.aes = list(alpha = 1, shape=21)))
+    }
+    # PDF
+    if (!is.null(filePath)) {
+        pdf(filePath, width=width, height=height)
+        print(p)
+        dev.off()
+    }
+    return(p)
+}
+
+
 ##############################
 #### From Osijek_HFHSD.R #####
 #### For KBlag_doxy_Cla.R ####
@@ -302,7 +455,7 @@ plotPCAtargets <- function(expLog2, targets, shape, color, fill, size,
 #' 
 #' Keep probes w/o annotations
 #' 
-#' @param eset
+#' @param eset ExpressionSet
 #' @return eset with collapsed annotations in slot annotations(eset)
 #' @export
 esetAnnSEs <- function(eset, annDb=clariomsmousetranscriptcluster.db) {
@@ -675,11 +828,11 @@ annKeggEntrez <- function(organism="mmu", annPackage="org.Mm.eg.db") {
 
 #' Create a list of GeneSetCollection for a list of designs and probe annotations using ENTREZID.
 #' 
-#' @param organism
-#' @param annPrb
-#' @param annKeggEntrez
-#' @param keggPathOrgIDs
-#' @param design
+#' @param organism Character organism 3-letter code, e.g. "mmu" or "hsa"
+#' @param annPrb Data frame probe annotations
+#' @param annKeggEntrez Data frame KEGG annotations
+#' @param keggPathOrgIDs TOWRITE
+#' @param design TOWRITE
 #' @return GeneSetCollection
 #' @export
 gscKeggEntrez <- function(organism="mmu", annPrb, annKeggEntrez, keggPathOrgIDs, design) {

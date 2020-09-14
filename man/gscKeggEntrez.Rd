@@ -6,6 +6,17 @@
 \usage{
 gscKeggEntrez(organism = "mmu", annPrb, annKeggEntrez, keggPathOrgIDs, design)
 }
+\arguments{
+\item{organism}{Character organism 3-letter code, e.g. "mmu" or "hsa"}
+
+\item{annPrb}{Data frame probe annotations}
+
+\item{annKeggEntrez}{Data frame KEGG annotations}
+
+\item{keggPathOrgIDs}{TOWRITE}
+
+\item{design}{TOWRITE}
+}
 \value{
 GeneSetCollection
 }

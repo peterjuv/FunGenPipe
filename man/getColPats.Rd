@@ -6,6 +6,9 @@
 \usage{
 getColPats(eset)
 }
+\arguments{
+\item{eset}{ExpressionSet}
+}
 \value{
 List of colors, each of length equal to the number of rows in phenoData
 }
@@ -31,3 +34,9 @@ colPats
 }
 }
 
+\examples{
+/donotrun{
+getColPats(Biobase::pData(dataRaw/eset))
+getColPats(Biobase::pData(eset))
+}
+}

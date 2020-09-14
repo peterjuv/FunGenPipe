@@ -6,6 +6,9 @@
 \usage{
 esetAnnSEs(eset, annDb = clariomsmousetranscriptcluster.db)
 }
+\arguments{
+\item{eset}{ExpressionSet}
+}
 \value{
 eset with collapsed annotations in slot annotations(eset)
 }
