@@ -1,4 +1,20 @@
+
+
 if (FALSE) {
+# plotMDStargets 2
+sd <- dataRG$Mproc %>% as_tibble %>% slice_sample(n=1000)
+pp2<-plotMDStargets2(sd, targets, trace=TRUE, filePath = file.path(resultDir, "_debug_MDS2.pdf"))
+pp3<-plotMDStargets2(sd, targets, trace=TRUE, filePath = file.path(resultDir, "_debug_MDS3.pdf"), namesFrom=HybName)
+
+# plotMDStargets bug p not numeric
+sd <- dataRG$Mproc %>% as_tibble %>% slice_sample(n=10)
+s2c(sd,"sd")
+s2c(targets,"targets")
+exit()
+ff<-plotMDStargets2(sd, targets, methods=c("euclidean"))
+cp <- getColPats2(targets, namesFrom=NULL)
+cpu <- getColPats2(targets, namesFrom=NULL, unique=TRUE)
+im <- isoMDScols(sd)
 
 ## gr device
 dev.off()
