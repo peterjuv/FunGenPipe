@@ -1,21 +1,13 @@
-#' FunGenPipe: Package of tools for building Function Genomics pipelines
-#'
-#' Package of tools for building Function Genomics pipelines
-#' 
-#' @author Peter Juvan, \email{peter.juvan@gmail.com}
-#' @section Meta-data (targets):
+#' @section Meta-data targets:
 #' Functions for manipulating colors in targets.
 #' @section Plot data:
 #' boxplotRLE
 #' @section Plot data using targets:
 #' pheatmapTargets
-#' plotPCAtargets
+#' plotPCAtargets2
+#' plotMDStargets2
 #' @section From Osijek_HFHSD:
 #' For KBlag_doxy_Cla.R
-#' @section
-#' @docType package
-#' @name FunGenPipe
-#' @import myHelpers
 NULL
 
  
@@ -54,10 +46,10 @@ getColPats <- function(eset) {
     require(purrr)
     assertthat::has_attr(eset, "phenoData")
     cols <- Biobase::pData(eset) %>% 
-        as_tibble %>% 
+        tibble::as_tibble %>% 
         select(starts_with("color_"))
     names <- Biobase::pData(eset) %>% 
-        as_tibble %>%
+        tibble::as_tibble %>%
         select(all_of(sub("color_", "", colnames(cols))))
     map2(cols, names, setNames)
 }
@@ -72,15 +64,19 @@ getColPats <- function(eset) {
 #' 
 #' @param targets Table with columns names with a prefix colorsFrom='color_'
 #' @param colorsFrom String prefix of names of columns with colors, default 'color_'
+#' @param rename Logical, rename colors using associated variables or variable namesFrom (default) or use existing (possibly missing) names
 #' @param namesFrom Either NULL for using variables that share suffixes with colors
-#'                  or NA for using preset names of colors
-#'                  or a variable from targets that is used for setting names to colors
+#'                  or a variable from targets that is used for setting names to colors, e.g. HybName
 #' @param unique If TRUE, returns unique names and associated colors;
 #'               Note that colors may be dropped, see the last example
 #' @param pullVar A variable from targets, e.g. Sex
 #' @return Named list of named colors for each variable from targets with an associated color.
-#'         The lenght of each list is equal to the number of rows or truncated to unique names if unique=TRUE.
-#'         If pullVar given, returns colors for a single variable from targets 
+#'         Names of variables correspond to color variables w/o colorsFrom prefix, e.g. "VarName" for "color_VarName"
+#'         Names of colors correspond to values of an associated variable by default; 
+#'         alternatively, names are set to values form namesFrom variable.
+#'         The lenght of each list is equal to the number of rows;
+#'         alternatively, lists are truncated to unique names if unique=TRUE.
+#'         If pullVar given, returns a single list of colors for that variable from targets 
 #' @examples
 #' \donotrun{
 #' (targets <- tibble(color_aa=c(1,1,2), color_bb=c("3"=3,"4"=4,"4"=4), aa=c(11,11,22), bb=c(33,33,44), cc=c(55,66,55)))
@@ -96,43 +92,43 @@ getColPats <- function(eset) {
 #' getColPats2(targets, namesFrom=d)
 #' # using unique
 #' getColPats2(targets, unique=TRUE)
-#' getColPats2(targets, namesFrom=c, unique=TRUE)
+#' getColPats2(targets, namesFrom=cc, unique=TRUE)
+#' # using preset names, possibly missing
+#' getColPats2(targets, rename=FALSE)
 #' }
+#' @section TOFIX:
+#' getColPats2(targets %>% select(-color_BatchIP), unique=TRUE, colorsFrom$                                          
+#' Error: 
 #' @export
-getColPats2 <- function(targets, colorsFrom="color_", namesFrom=NULL, unique=FALSE, pullVar=NULL) {
+getColPats2 <- function(targets, colorsFrom="color_", rename=TRUE, namesFrom=NULL, unique=FALSE, pullVar=NULL) {
     require(magrittr)
-    require(dplyr)
-    require(assertthat)
-    require(rlang)
-    require(purrr)
-    targets %<>% as_tibble
-    namesFrom <- enquo(namesFrom)
-    pullVar <- enquo(pullVar)
+    assertthat::assert_that(colorsFrom != "", msg="Parameter colorsFrom must be a prefix of names of variables from targets, not empty")
+    targets %<>% tibble::as_tibble
+    namesFrom <- rlang::enquo(namesFrom)
+    pullVar <- rlang::enquo(pullVar)
     # TOFIX assertthat::assert_that(quo_is_null(namesFrom) | assertthat::has_name(targets, !!namesFrom))
     cols <- targets %>% 
-        select(starts_with(colorsFrom)) %>% 
-        rename_with(~sub(colorsFrom, "", .))
-    # case_when(
-    #     quo_is_null(namesFrom) ~ map2(cols, targets %>% select(all_of(sub(colorsFrom, "", colnames(cols)))), setNames),
-    #     #quo_is_na(namesFrom) ~ map(cols, identity),
-    #     !quo_is_null(namesFrom) ~ map2(cols, targets %>% select(!!namesFrom), setNames)
-    # ) %>% as_tibble
-    if (quo_is_null(namesFrom))
-        names <- targets %>% select(all_of(sub(colorsFrom, "", colnames(cols))))
-    else
-        names <- targets %>% select(!!namesFrom)
-    ncols <- map2(cols, names, setNames)
-    if (!quo_is_null(pullVar))
-    {
-        ncol <- ncols %>% as_tibble %>% pull(!!pullVar)
+        dplyr::select(tidyselect::starts_with(colorsFrom)) %>% 
+        dplyr::rename_with(~sub(colorsFrom, "", .))
+    if (rename) {
+        if (rlang::quo_is_null(namesFrom))
+            names <- targets %>% dplyr::select(tidyselect::any_of(sub(colorsFrom, "", colnames(cols))))
+        else
+            names <- targets %>% dplyr::select(!!namesFrom)
+        assertthat::assert_that(assertthat::are_equal(dim(cols)[[1]], dim(names)[[1]]) & 
+            (dim(names)[[2]] %in% c(1,dim(cols)[[2]])),
+            msg = paste("The number of colors and variables is not the same. Not all variables with a prefix", colorsFrom, "have an associated variable. Consider using namesFrom parameter."))
+        ncols <- purrr::map2(cols, names, setNames)
+    } else 
+        ncols <- as.list(cols)
+    if (!quo_is_null(pullVar)) {
+        ncol <- ncols %>% tibble::as_tibble %>% pull(!!pullVar)
         if (unique)
             ncol <- ncol[!duplicated(names(ncol))]
         return(ncol)
-    }
-    else
-    {
+    } else {
         if (unique)
-            ncols %<>% map(~keep(., !duplicated(names(.))))
+            ncols %<>% purrr::map(~keep(., !duplicated(names(.))))
         return(ncols)
     }
 }
@@ -156,7 +152,7 @@ getColPats2 <- function(targets, colorsFrom="color_", namesFrom=NULL, unique=FAL
 #' @export
 boxplotRLE <- function(expLog2, filePath=NULL, RIN=NULL, width=7, height=7, alpha=0.5, ...) {
     require(Biobase)
-    require(tidyverse)
+    #require(tidyverse)
     require(magrittr)
     require(RColorBrewer)
     require(assertthat)
@@ -215,13 +211,13 @@ pheatmapTargets <- function(expLog2, targets, methods=c("manhattan", "euclidean"
     p <- list()
     for (method in methods) {
         dists <- as.matrix(dist(t(expLog2), method=method))
-        rownames(dists) <- row.names(targets)
+        rownames(dists) <- colnames(expLog2)
         colnames(dists) <- NULL
         diag(dists) <- NA
         hmcol <- colorRampPalette(RColorBrewer::brewer.pal(9, "YlOrRd"))(255)
         annRows <- getColPats2(targets, colorsFrom=colorsFrom, namesFrom=!!namesFrom)
         annRowsN <- as.data.frame(lapply(annRows, FUN=names))
-        row.names(annRowsN) <- row.names(targets)
+        row.names(annRowsN) <- colnames(expLog2)
         p[[method]] <- pheatmap(
            dists,
            col = (hmcol), 
@@ -294,7 +290,7 @@ plotPCAtargets <- function(expLog2, targets, shape, color, fill, size,
     sd_ratio <- sqrt(percentVar[2] / percentVar[1])
     ## plot
     p <- targets %>% 
-        as_tibble %>% 
+        tibble::as_tibble %>% 
         mutate(PC1 = PCA$x[,1], PC2 = PCA$x[,2]) %>% 
     {
         ggplot(., aes(PC2, PC1)) +
@@ -380,7 +376,7 @@ plotPCAtargets2 <- function(expLog2, targets, shape = NULL, color = NULL, fill =
     sd_ratio <- sqrt(percentVar[2] / percentVar[1])
     ## plot
     p <- targets %>% 
-        as_tibble %>% 
+        tibble::as_tibble %>% 
         mutate(PC1 = PCA$x[,1], PC2 = PCA$x[,2]) %>% 
     {
         ggplot(., aes(PC2, PC1)) +
@@ -443,6 +439,67 @@ plotPCAtargets2 <- function(expLog2, targets, shape = NULL, color = NULL, fill =
         dev.off()
     }
     return(p)
+}
+
+
+#' Plot MDS(es) of gene expression using different distance calculation methods and alternative colors.
+#' 
+#' @param expLog2 Expression matrix with genes in rows and samples in columns; 
+#'  columns must be named
+#' @param targets Phenotype data with columns with colors, i.e. color_Sex
+#' @param colorsFrom String variable prefix(es) from targets, passed to \code{getColPats2(...)}; default "color_"
+#' @param namesFrom Variable from targets, passed to \code{getColPats2(...)}; suggested HybName
+#' @param scale Logical scale data, passed to \code{MASS_MDScols()}
+#' @param center Logical center data, passed to \code{MASS_MDScols()}
+#' @param methods List of methods for distance calulation, individually passed to \code{stats::dist(..., method)} through \code{MASS_MDScols()}
+#' @param FUNS List of MDS function from pacakge MASS, passed individually to \code{MASS_MDScols()}
+#' @param p Power of the Minkowski distance, passed to \code{dist(...)} through \code{MASS_MDScols()}
+#' @param maxit Passed to \code{MASS_MDScols()}, 
+#' @param trace Trace progress, passed to \code{MASS_MDScols()}, default FALSE
+#' @param tol Tolerance, passed to \code{MASS_MDScols()}
+#' @param size Size of ggplot labels, passed to \code{geom_text()}
+#' @param filePath If given, output a PDF
+#' @param width PDF width
+#' @param height PDF height
+#' @return Invisibly a list of ggplot2 objects and PDF if filePath is given
+#' @import dplyr
+#' @importFrom ggplot2 aes labs theme element_text element_blank
+#' @importFrom myHelpers MASS_MDScols defactorChr
+#' @export
+plotMDStargets2 <- function(expLog2, targets, colorsFrom="color_", namesFrom=NULL, 
+    scale=FALSE, center=FALSE, methods=c("euclidean", "manhattan"), FUNS = c("isoMDS", "sammon"),
+    p = 2, maxit = 50, trace = FALSE, tol = 1e-3, size=3, filePath=NULL, width=7, height=7, ...) {
+    # require(myHelpers)
+    colPats <- getColPats2(targets, colorsFrom=colorsFrom, namesFrom={{namesFrom}})
+    colPatsUn <- getColPats2(targets, colorsFrom=colorsFrom, namesFrom={{namesFrom}}, unique=TRUE)
+    plots <- list()
+    fits <- list()
+    for (method in methods) {
+        for (FUN in FUNS) {
+            fits[[paste0(method, FUN)]] <- MASS_MDScols(expLog2, scale=scale, center=center, method=method, 
+                FUN=FUN, p=p, k=2, maxit=maxit, trace=trace, tol=tol, plot=FALSE)
+            for (nColPat in names(colPats)) {
+                plots[[paste0(method, FUN, nColPat)]] <- fits[[paste0(method, FUN)]] %>% 
+                    tibble::as_tibble %>% 
+                    mutate(color = colPats[[nColPat]],
+                           name = names(colPats[[nColPat]])) %>% 
+                    ggplot(aes(x=V1, y=V2, color=name, label=name)) + 
+                    geom_text(show.legend=FALSE, size=size) +
+                    labs(title = paste(FUN, method, dim(expLog2)[[2]], "objects,", dim(expLog2)[[1]], "parameters", nColPat, "colors")) + 
+                    theme(plot.title = element_text(hjust = 0.5),
+                          axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(),
+                          axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank()) +
+                    scale_color_manual(values = defactorChr(colPatsUn[[nColPat]]))
+            }
+        }
+    }
+    ## PDF
+    if (!is.null(filePath)) {
+        pdf(filePath, width=width, height=height)
+        print(plots)
+        dev.off()
+    }
+    invisible(plots)
 }
 
 
