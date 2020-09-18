@@ -3,7 +3,7 @@
 \name{getWriteHeatmap_PgseaTTcontrasts}
 \alias{getWriteHeatmap_PgseaTTcontrasts}
 \alias{getWriteHeatmap_PgseaTTcomparisons}
-\title{Write enriched patways from contrasts & return patways}
+\title{Write enriched pathways from contrasts & return patways}
 \usage{
 getWriteHeatmap_PgseaTTcontrasts(
   outPath,
@@ -40,29 +40,29 @@ getWriteHeatmap_PgseaTTcomparisons(
 \arguments{
 \item{outPath}{Path to write TTS}
 
-\item{gscPGSEA}{gscPGSEA[\link{fitName}]: a list of gene set collection}
+\item{gscPGSEA}{Named list of gene set collection}
 
-\item{contMatrices}{contMatrices[\link{fitName}]: a list of contrast matrices with Levels & Contrasts}
+\item{esetsPGSEA}{Named list of PGSEA esets}
 
-\item{comparisons}{comparisons[\link{fitName}]: a list of comparisons made from names of contrasts}
+\item{fitsPGSEA}{Named list of PGSEA fits}
 
-\item{esetsPGSEA[[fitName]]:}{a list of PGSEA esets}
+\item{contMatrices}{Named list of contrast matrices with Levels & Contrasts}
 
-\item{fitsPGSEA[[fitName]]:}{a list of PGSEA fits}
+\item{setIDCol}{Add a column to TT with set IDs and name it setIDCol}
 
-\item{setIDCol:}{add a column to TT with set IDs and name it setIDCol}
+\item{fitsProbes}{Named list of probe fits}
 
-\item{setName:}{name of the column from Biobase::fData(esetsPGSEA[\link{?}]) to show with heatmaps}
+\item{esetsProbes}{Named list of esets for BiocGenerics::annotation of probes with columns PROBEID, SYMBOL, ENTREZID, HSA_ENTREZID}
 
-\item{fitsProbes[[fitName]]:}{a list of probe fits}
+\item{comparisons}{Named list of comparisons made from names of contrasts}
 
-\item{esetsProbes[[fitName]]:}{a list of esets for BiocGenerics::annotation of probes with columns PROBEID, SYMBOL, ENTREZID, HSA_ENTREZID}
+\item{setName}{Name of the column from Biobase::fData(esetsPGSEA[\link{?}]) to show with heatmaps}
 }
 \value{
-a list TTs of enriched sets: annTT[\link{fitName}]
+Named list of \code{limma::topTable()} results (TTs) of enriched sets; names corresponds to names of fits
 }
 \description{
-Write enriched patways from contrasts & return patways
+Write enriched pathways from contrasts & return patways
 
 Write enriched patways from comparisons & return patways
 }

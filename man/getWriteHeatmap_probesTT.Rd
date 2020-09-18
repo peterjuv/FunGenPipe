@@ -28,18 +28,18 @@ getWriteHeatmap_probesTTcomparisons(
 )
 }
 \arguments{
-\item{outPath}{Path to write TTS}
+\item{outPath}{Path to write TTs}
 
-\item{esets}{esets[\link{fitName}]: a list of esets for BiocGenerics::annotation of probes with columns PROBEID, SYMBOL, ENTREZID, HSA_ENTREZID}
+\item{esets}{Named list of esets for BiocGenerics::annotation of probes with columns PROBEID, SYMBOL, ENTREZID, HSA_ENTREZID}
 
-\item{fits}{fits[\link{fitName}]: a list of PGSEA fits}
+\item{fits}{Named list of PGSEA fits}
 
-\item{contMatrices}{contMatrices[\link{fitName}]: a list of contrast matrices with Levels & Contrasts}
+\item{contMatrices}{Named list of contrast matrices with Levels & Contrasts}
 
-\item{comparisons}{comparisons[\link{fitName}]: a list of comparisons made from names of contrasts}
+\item{comparisons}{Named list of comparisons made from names of contrasts}
 }
 \value{
-A list TTs of enriched sets: annTT[\link{fitName}]
+Named list of \code{limma::topTable()} results (TTs) of DE genes; names corresponds to names of fits
 }
 \description{
 Write DE genes from contrasts & return DE genes

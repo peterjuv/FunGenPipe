@@ -18,19 +18,21 @@ Names of colors are set from the associated column, e.g., list(color_Sex = setNa
 }
 \section{Old implementation}{
 
+\dontrun{
 getColPats <- function(eset) {
-require(assertthat)
-require(Biobase)
-require(tibble)
-assertthat::has_attr(eset, "phenoData")
-colPats <- list()
-aNames <- colnames(Biobase::pData(eset))
-cNames <- aNames\link{grep("^color_", aNames, perl=TRUE)}
-fNames <- sub("^color_", "", cNames)
-for (i in seq_len(length(fNames))) {
-colPats[[fNames\link{i}]] <- setNames(Biobase::pData(eset)[[cNames\link{i}]], Biobase::pData(eset)[[fNames\link{i}]])
+    require(assertthat)
+    require(Biobase)
+    require(tibble)
+    assertthat::has_attr(eset, "phenoData")
+    colPats <- list()
+    aNames <- colnames(Biobase::pData(eset))
+    cNames <- aNames[grep("^color_", aNames, perl=TRUE)]
+    fNames <- sub("^color_", "", cNames)
+    for (i in seq_len(length(fNames))) {
+        colPats[[fNames[i]]] <- setNames(Biobase::pData(eset)[[cNames[i]]], Biobase::pData(eset)[[fNames[i]]])
+    }
+    colPats
 }
-colPats
 }
 }
 

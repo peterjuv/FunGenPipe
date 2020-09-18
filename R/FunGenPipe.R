@@ -23,6 +23,7 @@ NULL
 #' getColPats(Biobase::pData(eset))
 #' }
 #' @section Old implementation:
+#' \dontrun{
 #' getColPats <- function(eset) {
 #'     require(assertthat)
 #'     require(Biobase)
@@ -36,6 +37,7 @@ NULL
 #'         colPats[[fNames[i]]] <- setNames(Biobase::pData(eset)[[cNames[i]]], Biobase::pData(eset)[[fNames[i]]])
 #'     }
 #'     colPats
+#' }
 #' }
 #' @export
 getColPats <- function(eset) {
@@ -78,7 +80,7 @@ getColPats <- function(eset) {
 #'         alternatively, lists are truncated to unique names if unique=TRUE.
 #'         If pullVar given, returns a single list of colors for that variable from targets 
 #' @examples
-#' \donotrun{
+#' \dontrun{
 #' (targets <- tibble(color_aa=c(1,1,2), color_bb=c("3"=3,"4"=4,"4"=4), aa=c(11,11,22), bb=c(33,33,44), cc=c(55,66,55)))
 #' names(targets$color_aa)
 #' names(targets$color_bb)
@@ -447,13 +449,13 @@ plotPCAtargets2 <- function(expLog2, targets, shape = NULL, color = NULL, fill =
 #' @param expLog2 Expression matrix with genes in rows and samples in columns; 
 #'  columns must be named
 #' @param targets Phenotype data with columns with colors, i.e. color_Sex
-#' @param colorsFrom String variable prefix(es) from targets, passed to \code{getColPats2(...)}; default "color_"
-#' @param namesFrom Variable from targets, passed to \code{getColPats2(...)}; suggested HybName
+#' @param colorsFrom String variable prefix(es) from targets, passed to \code{getColPats2()}; default "color_"
+#' @param namesFrom Variable from targets, passed to \code{getColPats2()}; suggested HybName
 #' @param scale Logical scale data, passed to \code{MASS_MDScols()}
 #' @param center Logical center data, passed to \code{MASS_MDScols()}
-#' @param methods List of methods for distance calulation, individually passed to \code{stats::dist(..., method)} through \code{MASS_MDScols()}
+#' @param methods List of methods for distance calulation, passed individually to \code{stats::dist(method)} through \code{MASS_MDScols()}
 #' @param FUNS List of MDS function from pacakge MASS, passed individually to \code{MASS_MDScols()}
-#' @param p Power of the Minkowski distance, passed to \code{dist(...)} through \code{MASS_MDScols()}
+#' @param p Power of the Minkowski distance, passed to \code{dist()} through \code{MASS_MDScols()}
 #' @param maxit Passed to \code{MASS_MDScols()}, 
 #' @param trace Trace progress, passed to \code{MASS_MDScols()}, default FALSE
 #' @param tol Tolerance, passed to \code{MASS_MDScols()}
@@ -461,6 +463,7 @@ plotPCAtargets2 <- function(expLog2, targets, shape = NULL, color = NULL, fill =
 #' @param filePath If given, output a PDF
 #' @param width PDF width
 #' @param height PDF height
+#' @param ... Passed to ggplot2::geom_text
 #' @return Invisibly a list of ggplot2 objects and PDF if filePath is given
 #' @import dplyr
 #' @importFrom ggplot2 aes labs theme element_text element_blank
@@ -484,7 +487,7 @@ plotMDStargets2 <- function(expLog2, targets, colorsFrom="color_", namesFrom=NUL
                     mutate(color = colPats[[nColPat]],
                            name = names(colPats[[nColPat]])) %>% 
                     ggplot(aes(x=V1, y=V2, color=name, label=name)) + 
-                    geom_text(show.legend=FALSE, size=size) +
+                    geom_text(show.legend=FALSE, size=size, ...) +
                     labs(title = paste(FUN, method, dim(expLog2)[[2]], "objects,", dim(expLog2)[[1]], "parameters", nColPat, "colors")) + 
                     theme(plot.title = element_text(hjust = 0.5),
                           axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(),
@@ -539,11 +542,11 @@ esetAnnSEs <- function(eset, annDb=clariomsmousetranscriptcluster.db) {
 
 #' Write DE genes from contrasts & return DE genes
 #' 
-#' @param outPath Path to write TTS
-#' @param esets esets[[fitName]]: a list of esets for BiocGenerics::annotation of probes with columns PROBEID, SYMBOL, ENTREZID, HSA_ENTREZID
-#' @param fits fits[[fitName]]: a list of PGSEA fits
-#' @param contMatrices contMatrices[[fitName]]: a list of contrast matrices with Levels & Contrasts
-#' @returns A list TTs of enriched sets: annTT[[fitName]]
+#' @param outPath Path to write TTs
+#' @param esets Named list of esets for BiocGenerics::annotation of probes with columns PROBEID, SYMBOL, ENTREZID, HSA_ENTREZID
+#' @param fits Named list of PGSEA fits
+#' @param contMatrices Named list of contrast matrices with Levels & Contrasts
+#' @returns Named list of \code{limma::topTable()} results (TTs) of DE genes; names corresponds to names of fits
 #' @rdname getWriteHeatmap_probesTT
 #' @export
 getWriteHeatmap_probesTTcontrasts <- function(outPath, esets, fits, contMatrices, pVals,
@@ -599,7 +602,7 @@ getWriteHeatmap_probesTTcontrasts <- function(outPath, esets, fits, contMatrices
 
 #' Write DE genes from comparisons & return DE genes
 #' 
-#' @param comparisons comparisons[[fitName]]: a list of comparisons made from names of contrasts
+#' @param comparisons Named list of comparisons made from names of contrasts
 #' @rdname getWriteHeatmap_probesTT
 #' @export
 getWriteHeatmap_probesTTcomparisons <- function(outPath, esets, fits, comparisons, pVals,
@@ -663,18 +666,18 @@ getWriteHeatmap_probesTTcomparisons <- function(outPath, esets, fits, comparison
 
 
 
-#' Write enriched patways from contrasts & return patways
+#' Write enriched pathways from contrasts & return patways
 #' 
 #' @param outPath Path to write TTS
-#' @param gscPGSEA gscPGSEA[[fitName]]: a list of gene set collection
-#' @param esetsPGSEA[[fitName]]: a list of PGSEA esets
-#' @param fitsPGSEA[[fitName]]: a list of PGSEA fits
-#' @param contMatrices contMatrices[[fitName]]: a list of contrast matrices with Levels & Contrasts
-#' @param setIDCol: add a column to TT with set IDs and name it setIDCol
-#' @param setName: name of the column from Biobase::fData(esetsPGSEA[[?]]) to show with heatmaps
-#' @param fitsProbes[[fitName]]: a list of probe fits
-#' @param esetsProbes[[fitName]]: a list of esets for BiocGenerics::annotation of probes with columns PROBEID, SYMBOL, ENTREZID, HSA_ENTREZID
-#' @return a list TTs of enriched sets: annTT[[fitName]]
+#' @param gscPGSEA Named list of gene set collection
+#' @param esetsPGSEA Named list of PGSEA esets
+#' @param fitsPGSEA Named list of PGSEA fits
+#' @param contMatrices Named list of contrast matrices with Levels & Contrasts
+#' @param setIDCol Add a column to TT with set IDs and name it setIDCol
+#' @param setName Name of the column from Biobase::fData(esetsPGSEA[[?]]) to show with heatmaps
+#' @param fitsProbes Named list of probe fits
+#' @param esetsProbes Named list of esets for BiocGenerics::annotation of probes with columns PROBEID, SYMBOL, ENTREZID, HSA_ENTREZID
+#' @returns Named list of \code{limma::topTable()} results (TTs) of enriched sets; names corresponds to names of fits
 #' @examples
 #' \dontrun{
 #' getWriteHeatmap_PgseaTTcontrasts(outPath=file.path(resultDirOut, "3.PGSEA.KEGGREST.limma-contrasts"), gscPGSEA=gscKeggrestHsa, esetsPGSEA=esetsKeggrest, fitsPGSEA=fitsKeggrest,
@@ -749,7 +752,7 @@ getWriteHeatmap_PgseaTTcontrasts <- function(outPath, gscPGSEA, esetsPGSEA, fits
 
 #' Write enriched patways from comparisons & return patways
 #' 
-#' @param comparisons comparisons[[fitName]]: a list of comparisons made from names of contrasts
+#' @param comparisons Named list of comparisons made from names of contrasts
 #' @examples
 #' \dontrun{
 #' writeHeatmap_PgseaTTcomparisons(outPath=file.path(resultDirOut, "3.PGSEA.KEGGREST.limma-comparisons"), gscPGSEA=gscKeggrestHsa, esetsPGSEA=esetsKeggrest, fitsPGSEA=fitsKeggrest,
