@@ -15,7 +15,7 @@ plotMDStargets2(
   FUNS = c("cmdscale", "isoMDS", "sammon"),
   p = 2,
   selection = "pairwise",
-  top = 500,
+  tops = 500,
   maxit = 50,
   trace = FALSE,
   tol = 0.001,
@@ -66,7 +66,7 @@ columns must be named}
 
 \item{selection}{Character selection of rows (either "pairwise" or "common" or NULL for using all rows; default "pairwise"}
 
-\item{top}{Integer number of rows for distance calculation, default 500}
+\item{tops}{Integer vector number of rows (genes), passed individually to \code{MDScols()}}
 
 \item{maxit}{Passed to \code{MASS_MDScols()},}
 
@@ -94,5 +94,5 @@ Invisibly a list of ggplot2 objects and PDF if filePath is given
 \description{
 Plot MDS(es) of gene expression using different distance calculation methods and alternative colors.
 
-Plot MDS(es) of gene expression using different distance calculation methods and alternative colors.
+Depricated: Plot MDS(es) of gene expression using different distance calculation methods and alternative colors.
 }

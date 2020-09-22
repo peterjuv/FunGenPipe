@@ -455,9 +455,10 @@ plotPCAtargets2 <- function(expLog2, targets, shape = NULL, color = NULL, fill =
 #' @param colorsFrom String variable prefix(es) from targets, passed to \code{getColPats2()}; default "color_"
 #' @param namesFrom Variable from targets, passed to \code{getColPats2()}; suggested HybName
 #' @inheritParams myHelpers::MDScols
-#' @param FUNS List of MDS function from pacakge MASS, passed individually to \code{MDScols()}
+#' @param FUNS Character vector MDS functions, passed individually to \code{MDScols()}
+#' @param tops Integer vector number of rows (genes), passed individually to \code{MDScols()}
 #' @param size Size of ggplot labels, passed to \code{geom_text()}
-#' @param filePath If given, output a PDF
+#' @param filePath NULL or character; if given, output a PDF
 #' @param width PDF width
 #' @param height PDF height
 #' @param ... Passed to ggplot2::geom_text
@@ -468,18 +469,20 @@ plotPCAtargets2 <- function(expLog2, targets, shape = NULL, color = NULL, fill =
 #' @importFrom myHelpers MDScols defactorChr
 #' @export
 plotMDStargets2 <- function(expLog2, targets, colorsFrom="color_", namesFrom=NULL, 
-    scale=FALSE, center=FALSE, FUNS = c("cmdscale", "isoMDS", "sammon"), p = 2, selection = "pairwise", top = 500,
+    scale=FALSE, center=FALSE, FUNS = c("cmdscale", "isoMDS", "sammon"), p = 2, selection = "pairwise", tops = 500,
     maxit = 50, trace = FALSE, tol = 1e-3, size=3, filePath=NULL, width=7, height=7, ...) {
     # require(myHelpers)
     colPats <- getColPats2(targets, colorsFrom=colorsFrom, namesFrom={{namesFrom}})
     colPatsUn <- getColPats2(targets, colorsFrom=colorsFrom, namesFrom={{namesFrom}}, unique=TRUE)
+    if (is.null(selection)) tops <- dim(expLog2)[[1]]
     plots <- list()
     fits <- list()
-    for (FUN in FUNS) {
-        fits[[paste0(FUN)]] <- MDScols(expLog2, scale=scale, center=center, FUN=FUN, p=p, 
+    for (FUN in FUNS)
+    for (top in tops) {
+        fits[[paste0(FUN, top)]] <- MDScols(expLog2, scale=scale, center=center, FUN=FUN, p=p, 
             selection=selection, top=top, k=2, maxit=maxit, trace=trace, tol=tol, plot=FALSE)
         for (nColPat in names(colPats)) {
-            plots[[paste0(FUN, nColPat)]] <- fits[[paste0(FUN)]] %>% 
+            plots[[paste0(FUN, top, nColPat)]] <- fits[[paste0(FUN, top)]] %>% 
                 tibble::as_tibble() %>% 
                 mutate(color = colPats[[nColPat]],
                        name = names(colPats[[nColPat]])) %>% 
@@ -495,14 +498,14 @@ plotMDStargets2 <- function(expLog2, targets, colorsFrom="color_", namesFrom=NUL
     ## PDF
     if (!is.null(filePath)) {
         pdf(filePath, width=width, height=height)
-        print(plots)
+        for (pt in plots) print(pt)
         dev.off()
     }
     invisible(plots)
 }
 
 
-#' Plot MDS(es) of gene expression using different distance calculation methods and alternative colors.
+#' Depricated: Plot MDS(es) of gene expression using different distance calculation methods and alternative colors.
 #' 
 #' @param expLog2 Expression matrix with genes in rows and samples in columns; 
 #'  columns must be named
@@ -558,7 +561,7 @@ plotMDStargets2_MASS <- function(expLog2, targets, colorsFrom="color_", namesFro
     ## PDF
     if (!is.null(filePath)) {
         pdf(filePath, width=width, height=height)
-        print(plots)
+        for (pt in plots) print(pt)
         dev.off()
     }
     invisible(plots)
