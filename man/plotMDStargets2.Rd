@@ -2,9 +2,31 @@
 % Please edit documentation in R/FunGenPipe.R
 \name{plotMDStargets2}
 \alias{plotMDStargets2}
+\alias{plotMDStargets2_MASS}
 \title{Plot MDS(es) of gene expression using different distance calculation methods and alternative colors.}
 \usage{
 plotMDStargets2(
+  expLog2,
+  targets,
+  colorsFrom = "color_",
+  namesFrom = NULL,
+  scale = FALSE,
+  center = FALSE,
+  FUNS = c("cmdscale", "isoMDS", "sammon"),
+  p = 2,
+  selection = "pairwise",
+  top = 500,
+  maxit = 50,
+  trace = FALSE,
+  tol = 0.001,
+  size = 3,
+  filePath = NULL,
+  width = 7,
+  height = 7,
+  ...
+)
+
+plotMDStargets2_MASS(
   expLog2,
   targets,
   colorsFrom = "color_",
@@ -38,11 +60,13 @@ columns must be named}
 
 \item{center}{Logical center data, passed to \code{MASS_MDScols()}}
 
-\item{methods}{List of methods for distance calulation, passed individually to \code{stats::dist(method)} through \code{MASS_MDScols()}}
-
 \item{FUNS}{List of MDS function from pacakge MASS, passed individually to \code{MASS_MDScols()}}
 
 \item{p}{Power of the Minkowski distance, passed to \code{dist()} through \code{MASS_MDScols()}}
+
+\item{selection}{Character selection of rows (either "pairwise" or "common" or NULL for using all rows; default "pairwise"}
+
+\item{top}{Integer number of rows for distance calculation, default 500}
 
 \item{maxit}{Passed to \code{MASS_MDScols()},}
 
@@ -59,10 +83,16 @@ columns must be named}
 \item{height}{PDF height}
 
 \item{...}{Passed to ggplot2::geom_text}
+
+\item{methods}{List of methods for distance calulation, passed individually to \code{stats::dist(method)} through \code{MASS_MDScols()}}
 }
 \value{
 Invisibly a list of ggplot2 objects and PDF if filePath is given
+
+Invisibly a list of ggplot2 objects and PDF if filePath is given
 }
 \description{
+Plot MDS(es) of gene expression using different distance calculation methods and alternative colors.
+
 Plot MDS(es) of gene expression using different distance calculation methods and alternative colors.
 }

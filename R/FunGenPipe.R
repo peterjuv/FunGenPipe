@@ -48,10 +48,10 @@ getColPats <- function(eset) {
     require(purrr)
     assertthat::has_attr(eset, "phenoData")
     cols <- Biobase::pData(eset) %>% 
-        tibble::as_tibble %>% 
+        tibble::as_tibble() %>% 
         select(starts_with("color_"))
     names <- Biobase::pData(eset) %>% 
-        tibble::as_tibble %>%
+        tibble::as_tibble() %>%
         select(all_of(sub("color_", "", colnames(cols))))
     map2(cols, names, setNames)
 }
@@ -105,7 +105,7 @@ getColPats <- function(eset) {
 getColPats2 <- function(targets, colorsFrom="color_", rename=TRUE, namesFrom=NULL, unique=FALSE, pullVar=NULL) {
     require(magrittr)
     assertthat::assert_that(colorsFrom != "", msg="Parameter colorsFrom must be a prefix of names of variables from targets, not empty")
-    targets %<>% tibble::as_tibble
+    targets %<>% tibble::as_tibble()
     namesFrom <- rlang::enquo(namesFrom)
     pullVar <- rlang::enquo(pullVar)
     # TOFIX assertthat::assert_that(quo_is_null(namesFrom) | assertthat::has_name(targets, !!namesFrom))
@@ -123,8 +123,8 @@ getColPats2 <- function(targets, colorsFrom="color_", rename=TRUE, namesFrom=NUL
         ncols <- purrr::map2(cols, names, setNames)
     } else 
         ncols <- as.list(cols)
-    if (!quo_is_null(pullVar)) {
-        ncol <- ncols %>% tibble::as_tibble %>% pull(!!pullVar)
+    if (!rlang::quo_is_null(pullVar)) {
+        ncol <- ncols %>% tibble::as_tibble() %>% pull(!!pullVar)
         if (unique)
             ncol <- ncol[!duplicated(names(ncol))]
         return(ncol)
@@ -246,7 +246,7 @@ pheatmapTargets <- function(expLog2, targets, methods=c("manhattan", "euclidean"
 }
 
 
-#' Plot PCA for gene expression and phenotype data
+#' Depricated: Plot PCA for gene expression and phenotype data
 #' 
 #' @param expLog2 Gene expression matrix in log2 scale
 #' @param targets Phenotype data with columns shape, color, fill, size, 
@@ -265,6 +265,7 @@ pheatmapTargets <- function(expLog2, targets, methods=c("manhattan", "euclidean"
 #' @param alpha Transparency of points, passed to geom_point
 #' @param ... Passed to geom_point
 #' @return ggplot2 object and PDF if filePath is given
+#' @rdname plotPCAtargets2
 #' @section TODO:
 #'  FIX: add return value
 #'  FIX: Discrete scale_color supplied for continuous color variable; scale_color not used
@@ -292,7 +293,7 @@ plotPCAtargets <- function(expLog2, targets, shape, color, fill, size,
     sd_ratio <- sqrt(percentVar[2] / percentVar[1])
     ## plot
     p <- targets %>% 
-        tibble::as_tibble %>% 
+        tibble::as_tibble() %>% 
         mutate(PC1 = PCA$x[,1], PC2 = PCA$x[,2]) %>% 
     {
         ggplot(., aes(PC2, PC1)) +
@@ -349,6 +350,7 @@ plotPCAtargets <- function(expLog2, targets, shape, color, fill, size,
 #' @param sizeRange Integer c(min,max) for scaling point size; used when size parameter is given
 #' @param ... Passed to geom_point
 #' @return ggplot2 object and PDF if filePath is given
+#' @rdname plotPCAtargets2
 #' @section TODO:
 #'  FIX: add guides_*
 #'  FIX: Discrete color_targets supplied for continuous color variable; color_targets not used
@@ -378,7 +380,7 @@ plotPCAtargets2 <- function(expLog2, targets, shape = NULL, color = NULL, fill =
     sd_ratio <- sqrt(percentVar[2] / percentVar[1])
     ## plot
     p <- targets %>% 
-        tibble::as_tibble %>% 
+        tibble::as_tibble() %>% 
         mutate(PC1 = PCA$x[,1], PC2 = PCA$x[,2]) %>% 
     {
         ggplot(., aes(PC2, PC1)) +
@@ -444,6 +446,62 @@ plotPCAtargets2 <- function(expLog2, targets, shape = NULL, color = NULL, fill =
 }
 
 
+
+#' Plot MDS(es) of gene expression using different distance calculation methods and alternative colors.
+#' 
+#' @param expLog2 Expression matrix with genes in rows and samples in columns; 
+#'  columns must be named
+#' @param targets Phenotype data with columns with colors, i.e. color_Sex
+#' @param colorsFrom String variable prefix(es) from targets, passed to \code{getColPats2()}; default "color_"
+#' @param namesFrom Variable from targets, passed to \code{getColPats2()}; suggested HybName
+#' @inheritParams myHelpers::MDScols
+#' @param FUNS List of MDS function from pacakge MASS, passed individually to \code{MDScols()}
+#' @param size Size of ggplot labels, passed to \code{geom_text()}
+#' @param filePath If given, output a PDF
+#' @param width PDF width
+#' @param height PDF height
+#' @param ... Passed to ggplot2::geom_text
+#' @return Invisibly a list of ggplot2 objects and PDF if filePath is given
+#' @rdname plotMDStargets2
+#' @import dplyr
+#' @importFrom ggplot2 aes labs theme element_text element_blank
+#' @importFrom myHelpers MDScols defactorChr
+#' @export
+plotMDStargets2 <- function(expLog2, targets, colorsFrom="color_", namesFrom=NULL, 
+    scale=FALSE, center=FALSE, FUNS = c("cmdscale", "isoMDS", "sammon"), p = 2, selection = "pairwise", top = 500,
+    maxit = 50, trace = FALSE, tol = 1e-3, size=3, filePath=NULL, width=7, height=7, ...) {
+    # require(myHelpers)
+    colPats <- getColPats2(targets, colorsFrom=colorsFrom, namesFrom={{namesFrom}})
+    colPatsUn <- getColPats2(targets, colorsFrom=colorsFrom, namesFrom={{namesFrom}}, unique=TRUE)
+    plots <- list()
+    fits <- list()
+    for (FUN in FUNS) {
+        fits[[paste0(FUN)]] <- MDScols(expLog2, scale=scale, center=center, FUN=FUN, p=p, 
+            selection=selection, top=top, k=2, maxit=maxit, trace=trace, tol=tol, plot=FALSE)
+        for (nColPat in names(colPats)) {
+            plots[[paste0(FUN, nColPat)]] <- fits[[paste0(FUN)]] %>% 
+                tibble::as_tibble() %>% 
+                mutate(color = colPats[[nColPat]],
+                       name = names(colPats[[nColPat]])) %>% 
+                ggplot(aes(x=V1, y=V2, color=name, label=name)) + 
+                geom_text(show.legend=FALSE, size=size, ...) +
+                labs(title = paste(FUN, dim(expLog2)[[2]], "objects,", min(top, dim(expLog2)[[1]]), selection, "parameters,", nColPat, "colors")) + 
+                theme(plot.title = element_text(hjust = 0.5),
+                      axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(),
+                      axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank()) +
+                scale_color_manual(values = defactorChr(colPatsUn[[nColPat]]))
+        }
+    }
+    ## PDF
+    if (!is.null(filePath)) {
+        pdf(filePath, width=width, height=height)
+        print(plots)
+        dev.off()
+    }
+    invisible(plots)
+}
+
+
 #' Plot MDS(es) of gene expression using different distance calculation methods and alternative colors.
 #' 
 #' @param expLog2 Expression matrix with genes in rows and samples in columns; 
@@ -465,11 +523,12 @@ plotPCAtargets2 <- function(expLog2, targets, shape = NULL, color = NULL, fill =
 #' @param height PDF height
 #' @param ... Passed to ggplot2::geom_text
 #' @return Invisibly a list of ggplot2 objects and PDF if filePath is given
+#' @rdname plotMDStargets2
 #' @import dplyr
 #' @importFrom ggplot2 aes labs theme element_text element_blank
 #' @importFrom myHelpers MASS_MDScols defactorChr
 #' @export
-plotMDStargets2 <- function(expLog2, targets, colorsFrom="color_", namesFrom=NULL, 
+plotMDStargets2_MASS <- function(expLog2, targets, colorsFrom="color_", namesFrom=NULL, 
     scale=FALSE, center=FALSE, methods=c("euclidean", "manhattan"), FUNS = c("isoMDS", "sammon"),
     p = 2, maxit = 50, trace = FALSE, tol = 1e-3, size=3, filePath=NULL, width=7, height=7, ...) {
     # require(myHelpers)
@@ -483,7 +542,7 @@ plotMDStargets2 <- function(expLog2, targets, colorsFrom="color_", namesFrom=NUL
                 FUN=FUN, p=p, k=2, maxit=maxit, trace=trace, tol=tol, plot=FALSE)
             for (nColPat in names(colPats)) {
                 plots[[paste0(method, FUN, nColPat)]] <- fits[[paste0(method, FUN)]] %>% 
-                    tibble::as_tibble %>% 
+                    tibble::as_tibble() %>% 
                     mutate(color = colPats[[nColPat]],
                            name = names(colPats[[nColPat]])) %>% 
                     ggplot(aes(x=V1, y=V2, color=name, label=name)) + 
