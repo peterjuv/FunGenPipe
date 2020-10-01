@@ -18,10 +18,9 @@ pheatmapTargets(
 )
 }
 \arguments{
-\item{expLog2}{Expression matrix with genes in rows and samples in columns;
-columns must be named}
+\item{expLog2}{Expression matrix (preferably in log2 scale) with genes in rows and samples in named columns}
 
-\item{targets}{Phenotype data with columns with colors, i.e. color_Sex}
+\item{targets}{Phenotype data with columns with colors, e.g., color_Sex}
 
 \item{methods}{List of methods for distance calulation, individually passed to stats::dist(..., method)}
 
@@ -29,7 +28,7 @@ columns must be named}
 
 \item{namesFrom}{Variable passed to getColPats2}
 
-\item{filePath}{If given, output a PDF}
+\item{filePath}{NULL or character; if given, output a PDF; default NULL}
 
 \item{width}{PDF width}
 

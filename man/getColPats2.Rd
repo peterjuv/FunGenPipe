@@ -2,7 +2,7 @@
 % Please edit documentation in R/FunGenPipe.R
 \name{getColPats2}
 \alias{getColPats2}
-\title{Get color patterns with names from another column from targets}
+\title{Get named color patterns with names preset or from other column(s) from targets}
 \usage{
 getColPats2(
   targets,
@@ -16,9 +16,10 @@ getColPats2(
 \arguments{
 \item{targets}{Table with columns names with a prefix colorsFrom='color_'}
 
-\item{colorsFrom}{String prefix of names of columns with colors, default 'color_'}
+\item{colorsFrom}{Character, non-empty prefix of names of columns with colors, default 'color_'}
 
-\item{rename}{Logical, rename colors using associated variables or variable namesFrom (default) or use existing (possibly missing) names}
+\item{rename}{Logical, default TRUE: rename colors using associated variables or variable namesFrom (default)
+FALSE: use existing names from 'color_' variables, or, if missing, use values from associated variables}
 
 \item{namesFrom}{Either NULL for using variables that share suffixes with colors
 or a variable from targets that is used for setting names to colors, e.g. HybName}
@@ -38,17 +39,17 @@ alternatively, lists are truncated to unique names if unique=TRUE.
 If pullVar given, returns a single list of colors for that variable from targets
 }
 \description{
-New implementation allowing for alternative naming using parameter namesFrom
-Returns columns from phenoData that start with "color_" and have their suffix in common with another column;
-Names of colors are set from the associated column, e.g., tibble(color_Sex = setNames(color_Sex, Sex), ...)
-At least 2 columns are required, e.g. Var and color_Var; both
+Returns columns from targets that start with "color_" and have their suffix in common with another column;
+column names are dropped prefix defined by parameter colorsFrom, e.g., "color_"
+New implementation allowing for alternative naming using parameter namesFrom.
+Names of colors may be:
+\itemize{
+\item preset (if rename = FALSE) or
+\item set from the associated column, e.g., from Var for color_Var
+\item set from a common coulmn for all colors set by namesFrom parameter, e.g., namesFrom=HybName
+Minimum 2 columns are required, e.g. Var and color_Var
 }
-\section{TOFIX}{
-
-getColPats2(targets \%>\% select(-color_BatchIP), unique=TRUE, colorsFrom$
-Error:
 }
-
 \examples{
 \dontrun{
 (targets <- tibble(color_aa=c(1,1,2), color_bb=c("3"=3,"4"=4,"4"=4), aa=c(11,11,22), bb=c(33,33,44), cc=c(55,66,55)))
@@ -65,7 +66,9 @@ getColPats2(targets, namesFrom=d)
 # using unique
 getColPats2(targets, unique=TRUE)
 getColPats2(targets, namesFrom=cc, unique=TRUE)
-# using preset names, possibly missing
-getColPats2(targets, rename=FALSE)
+# using preset names, and if missing, substiting from associated variables
+getColPats2(targets, rename=FALSE, namesFrom=NULL)
+# using preset names, and if missing, substiting from associated variables, not using namesFrom=cc, issueing a warning
+getColPats2(targets, rename=FALSE, namesFrom=cc)
 }
 }

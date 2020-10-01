@@ -9,6 +9,7 @@ plotMDStargets2(
   expLog2,
   targets,
   colorsFrom = "color_",
+  rename = TRUE,
   namesFrom = NULL,
   scale = FALSE,
   center = FALSE,
@@ -47,10 +48,9 @@ plotMDStargets2_MASS(
 )
 }
 \arguments{
-\item{expLog2}{Expression matrix with genes in rows and samples in columns;
-columns must be named}
+\item{expLog2}{Expression matrix (preferably in log2 scale) with genes in rows and samples in columns}
 
-\item{targets}{Phenotype data with columns with colors, i.e. color_Sex}
+\item{targets}{Phenotype data with columns with colors, e.g., color_Sex}
 
 \item{colorsFrom}{String variable prefix(es) from targets, passed to \code{getColPats2()}; default "color_"}
 
@@ -64,7 +64,7 @@ columns must be named}
 
 \item{p}{Power of the Minkowski distance, passed to \code{dist()} through \code{MASS_MDScols()}}
 
-\item{selection}{Character selection of rows (either "pairwise" or "common" or NULL for using all rows; default "pairwise"}
+\item{selection}{Character "pairwise" or "common" for selection of rows or NULL for using all rows; default "pairwise"}
 
 \item{tops}{Integer vector number of rows (genes), passed individually to \code{MDScols()}}
 
@@ -76,7 +76,7 @@ columns must be named}
 
 \item{size}{Size of ggplot labels, passed to \code{geom_text()}}
 
-\item{filePath}{If given, output a PDF}
+\item{filePath}{NULL or character; if given, output a PDF; default NULL}
 
 \item{width}{PDF width}
 
@@ -96,3 +96,7 @@ Plot MDS(es) of gene expression using different distance calculation methods and
 
 Depricated: Plot MDS(es) of gene expression using different distance calculation methods and alternative colors.
 }
+\section{TODO}{
+ add parameter dim.plot as in limma::plotMDS
+}
+

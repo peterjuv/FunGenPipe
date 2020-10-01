@@ -6,3 +6,4 @@
 ^\.github$
 ^codecov\.yml$
 ^R/debug_FunGenPipe\.R$
+^debug_FunGenPipe\.R$

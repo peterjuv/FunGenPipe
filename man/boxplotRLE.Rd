@@ -15,10 +15,9 @@ boxplotRLE(
 )
 }
 \arguments{
-\item{expLog2}{Expression matrix with genes in rows and samples in columns;
-columns must be named}
+\item{expLog2}{Expression matrix (preferably in log2 scale) with genes in rows and samples in columns}
 
-\item{filePath}{If given, output a PDF}
+\item{filePath}{NULL or character; if given, output a PDF; default NULL}
 
 \item{RIN}{If given, correlate it to median and IQR of RLE;
 otherwise correlate RLE to a straight line (RLE==1 for all samples)}

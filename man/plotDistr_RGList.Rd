@@ -23,7 +23,7 @@ plotDistr_RGList(
 \arguments{
 \item{RGList}{A list of matrices of signal intensities per channel}
 
-\item{filePath}{Path/file.pdf}
+\item{filePath}{NULL or character; if given, output a PDF; default NULL}
 
 \item{channels}{List of data.frames from RGList, e.g. list("log2(R)", "log2(G)")}
 
