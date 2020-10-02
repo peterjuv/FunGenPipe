@@ -48,51 +48,6 @@ for (nColPat in names(colPats)) {
     print(colPats[[nColPat]] %>% tibble::tibble("{nColPat}" := names(.), colors=.))
 }
 
-## rename=TRUE (default)
-## namesFrom=NULL,     orderByColors=TRUE
-plotDistrTargets2(expLog2, targets, colorsFrom="color_", namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, 
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-NULL.pdf"))
-## namesFrom=HybName
-plotDistrTargets2(expLog2, targets, colorsFrom="color_", namesFrom=HybName, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, 
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-HybName.pdf"))
-## namesFrom=Birth3WHO
-plotDistrTargets2(expLog2, targets, colorsFrom="color_", namesFrom=Birth3WHO, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, 
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-Birth3WHO.pdf"))
-## namesFrom=HybName,  orderByColors=FALSE
-plotDistrTargets2(expLog2, targets, colorsFrom="color_", namesFrom=HybName, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-HybName-noReorder.pdf"))
-
-## rename=FALSE () (implies namesFrom=NULL)
-## orderByColors=TRUE
-plotDistrTargets2(expLog2, targets, colorsFrom="color_", rename=FALSE, namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, 
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-noRename.pdf"))
-## orderByColors=FALSE
-plotDistrTargets2(expLog2, targets, colorsFrom="color_", rename=FALSE, namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-noRename-noReorder.pdf"))
-## warning: rename=FALSE $ namesFrom!=NULL
-plotDistrTargets2(expLog2, targets, colorsFrom="color_", rename=FALSE, namesFrom=Birth2, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-warning.pdf"))
-## w/o targets
-getColPats2(NULL, unique=TRUE)
-plotDistrTargets2(expLog2, NULL, colorsFrom="color_", rename=TRUE, namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-noTargets.pdf"))
-exxx <- expLog2
-colnames(exxx) <- names(getColPats2(targets, namesFrom=Birth3WHO, pullVar=Birth3WHO))
-plotDistrTargets2(exxx, NULL, colorsFrom="color_", rename=TRUE, namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-euqalSampleNames-noTargets-.pdf"))
-plotDistrTargets2(exxx, targets, colorsFrom="color_", rename=TRUE, namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-euqalSampleNames.pdf"))
-
 }
 ## WORKING w/o namesFrom=NULL
 # #' Plot distributions of signals from limma RGList, MAList, EList or EListRaw objects 

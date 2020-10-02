@@ -240,7 +240,7 @@ getColPats2 <- function(targets, colorsFrom="color_", rename=TRUE, namesFrom=NUL
 #' @importFrom dplyr filter sample_n right_join mutate
 #' @importFrom tidyr pivot_longer
 #' @importFrom tidyselect everything
-#' @importFrom rlang enquos eval_tidy quo_name quo_is_null :=
+#' @importFrom rlang enquo eval_tidy quo_name quo_is_null :=
 #' @importFrom forcats fct_reorder
 #' @importFrom purrr set_names
 #' @importFrom vctrs vec_as_names
@@ -249,13 +249,16 @@ getColPats2 <- function(targets, colorsFrom="color_", rename=TRUE, namesFrom=NUL
 plotDistrTargets2 <- function(expLog2, targets, colorsFrom = "color_", rename = TRUE, namesFrom = NULL, 
     FUNS = c(geom_density, geom_boxplot), probeTypeVec = NULL, probeTypeValue = 0, numProbes = NULL, 
     orderByColors = TRUE, scale_x_limits = NULL, filePath = NULL, width=16/9*7, height=7, ...) {
+    # enquos
+    nExpLog2 <- rlang::quo_name(rlang::enquo(expLog2))
+    namesFrom <- rlang::enquo(namesFrom)
     # asserts
     assertthat::assert_that(is.matrix(expLog2))
     assertthat::are_equal(dim(expLog2)[[1]], length(probeTypeVec))
+    assertthat::assert_that(is.list(FUNS))
     assertthat::assert_that(is.logical(orderByColors))
     # parameters and globals
     colnames(expLog2) <- vctrs::vec_as_names(colnames(expLog2), repair="unique")  # needed because of buggy pivot_longer(names_repair="unique")
-    namesFrom <- enquo(namesFrom)
     nNamesFrom <- rlang::quo_name(namesFrom)
     FUNS <- setNames(FUNS, as.character(1:length(FUNS)))
     if (is.null(probeTypeVec)) { 
@@ -274,7 +277,7 @@ plotDistrTargets2 <- function(expLog2, targets, colorsFrom = "color_", rename = 
         dplyr::select(-probeType) %>% 
         dplyr::sample_n(numProbes) %>% 
         tidyr::pivot_longer(tidyselect::everything(), names_to="Sample", values_to="Value", names_repair="unique")
-    titlePfx <- paste("Distribution on", numProbes, "probes", titleSfx)
+    titlePfx <- paste("Distribution of", nExpLog2, "on", numProbes, "probes", titleSfx)
     for (nFUN in names(FUNS)) {
         if (length(colPats) > 0) {
             for (nColPat in names(colPats)) {
