@@ -1,18 +1,71 @@
-#' @section Meta-data targets:
-#' Functions for manipulating colors in targets: getColPats2(), 
-#' @section Plot data:
-#' plotDistr_RGList
-#' boxplotRLE
-#' @section Plot data using targets:
-#' The order od data columns should (always) be kept in the order of targets.
+#' @section Genomics
+#' Functions that operate with ranges and sequences
+#' dechiperMeltDNAtime
+#' @section Tagets meta-data
+#' Functions for manipulating colors in targets.
+#' getColPats - depricated
+#' getColPats2
+#' @section Plot distributions, heatmap, PCA & MDS using targets meta-data
+#' Note: the order od data columns should (always) be kept in the order of targets.
 #' plotDistrTargets2
 #' pheatmapTargets
 #' plotPCAtargets2
+#' plotPCAtargets - depricated
 #' plotMDStargets2
-#' @section From Osijek_HFHSD:
+#' plotMDStargets2_MASS - depricated
+#' @section Plot distributions using limma-style data
+#' plotDistr_RGList
+#' boxplotRLE
+#' @section From Osijek_HFHSD
 #' For KBlag_doxy_Cla.R
 NULL
 
+###################
+#### Genomics #####
+###################
+
+#' Calculate melting temperatures from ranges using a specified genome.
+#' 
+#' Tm is estimated from a range of temperatures (Trange) by finding a max of ThetaDerivative over that range.
+#' Tm is set to NA in case of multiple Tm values.
+#' @param myGRanges GRanges, ranges of sequences with a specified genome
+#' @param myBSgenome BSgenome object
+#' @param Trange Range of melting temperatures for calculation of Theta derivatives, optional, default 50:100
+#' @return Tibble with names of ranges (name) and Tm; additionally, sequences (seq), (max)ThetaDerivative, list of Tm (TmList); message execution time
+#' @importFrom magrittr %>%
+#' @importFrom assertthat assert_that
+#' @importFrom GenomeInfoDb genome seqnames
+#' @importFrom Biostrings getSeq
+#' @importFrom tibble tibble
+#' @importFrom dplyr mutate
+#' @importFrom purrr map2 map_dbl pmap map_if
+#' @importFrom DECIPHER MeltDNA
+#' @export
+dechiperMeltDNAtime <- function(myGRanges, myBSgenome, Trange=seq(50,100,1)) {
+    require(myBSgenome)
+    assertthat::assert_that(all(GenomeInfoDb::genome(myGRanges) %in% GenomeInfoDb::genome(myBSgenome))) # test genome names
+    assertthat::assert_that(all(names(GenomeInfoDb::genome(myGRanges)) %in% GenomeInfoDb::seqnames(myBSgenome))) # test seqnames
+    timeDECHIPER = list()
+    timeDECHIPER[["start"]] <- Sys.time()
+    tbSeqTm <- Biostrings::getSeq(myBSgenome, myGRanges) %>% 
+        as.character() %>%
+        tibble::tibble(name = names(.), seq = ., temps = list(Trange)) %>% 
+        dplyr::mutate(
+            ThetaDerivative = purrr::map2(seq, temps, 
+                ~ tryCatch(as.numeric(DECIPHER::MeltDNA(.x, type="derivative", temps=.y)), error=function(e) NA)),
+            maxThetaDerivative = purrr::map_dbl(ThetaDerivative, max),
+            TmList = purrr::pmap(list(temps, ThetaDerivative, maxThetaDerivative), 
+                ~ tryCatch(..1[which(..2 == ..3)], error=function(e) NA)),
+            Tm = unlist(purrr::map_if(TmList, ~ length(.) != 1, ~ NA))
+        )
+    timeDECHIPER[["finish"]] <- Sys.time()
+    message(paste("DECHIPER::MeldDNA start:", timeDECHIPER[["start"]], "finish: ", timeDECHIPER[["finish"]]))
+    return(tbSeqTm)
+}
+
+############################
+#### Targets meta-data #####
+############################
  
 #' Get color patterns with names from another column from ExpressionSet slot phenoData.
 #' 
@@ -155,6 +208,9 @@ getColPats2 <- function(targets, colorsFrom="color_", rename=TRUE, namesFrom=NUL
     }
 }
 
+########################################################################
+#### Plot distributions, heatmap, PCA, MDS using targets meta-data #####
+########################################################################
 
 #' Plot distributions of signals from limma RGList, MAList, EList or EListRaw objects 
 #' using multiple colors for groups of samples
@@ -320,156 +376,6 @@ plotDistrTargets2 <- function(expLog2, targets, colorsFrom = "color_", rename = 
     invisible(plots)
 }
 
-
-
-#' Plot distributions of signals in a RGList object using multiple colors for groups of samples
-#' 
-#' Plots distributions for each combination of FUNS, channels and sampleColors.
-#' By default, samples are ordered according to the sampleColors (if provided).
-#' Colors should be provided as factors with a preset order of levels; the order of colors is determined by the order of levels
-#' 
-#' @param RGList A list of matrices of signal intensities per channel
-#' @param filePath NULL or character; if given, output a PDF; default NULL
-#' @param channels List of data.frames from RGList, e.g. list("log2(R)", "log2(G)")
-#' @param FUNS geom_functions from ggplot2, default \code{c(geom_density, geom_boxplot)}, others: \code{c(geom_violin, geom_histogram, ggridges::geom_density_ridges)}
-#' @param probeTypeVec Vector of probe types
-#' @param probeTypeValue Value from probeTypeVec to use for plotting
-#' @param numProbes Number of randomly select probes
-#' @param sampleColors Tibble of named factors of colors with names matching sample names
-#' @param orderByColors Logical for ordering samples by colors (coded as a factor with levels in order); default TRUE
-#' @param scale_x_limits NULL for auto-scale; use c(0,16) or less for log2(intensities)
-#' @param width PDF width, default 16/9*7=12.44
-#' @param height PDF height, default 7
-#' @param ... Passed to ggplot2::FUN, e.g.: bins, binwidth, show.legend
-#' @return
-#' A list of ggplots, one per a combination of FUNS, channels and sampleColors
-#' PDF if filePath is not NULL
-#' @examples
-#' \dontrun{
-#' plotDistr_RGList(dataRG.bgc, file.path(curDir, "density-boxplot_dataRG.bgc_genes.pdf"), 
-#' channels = c("log2R","log2G","beta"), probeTypeVec = dataRG.bgc$genes$ControlType, probeTypeValue = 0,
-#' numProbes = 10000, sampleColors = targets %>% select(starts_with("color_")))
-#' ## Removed parameters/code:
-#' # transform = log2: transformation function applied to each channel (default: log2; identity for none)
-#' mutate("{{transform}}({ch})" := transform(!!parse_expr(ch)))
-#' ggplot(aes(x=transform(!!parse_expr(ch)), color=HybName)) +
-#' ggplot(d2, aes(x=!!parse_expr(ch), color=fct_reorder(HybName, order(colors)))) + #, order=colors)) + 
-#' }
-#' @section Implementation:
-#' See \url{https://www.tidyverse.org/blog/2020/02/glue-strings-and-tidy-eval/} for bracing variables.
-#' Evaluation of expression: \url{https://adv-r.hadley.nz/evaluation.html}.
-#' For \code{bquote(a +. (b))}: \url{http://adv-r.had.co.nz/Expressions.html}.
-#' @import ggplot2
-#' @importFrom assertthat assert_that are_equal
-#' @importFrom tibble add_column tibble
-#' @importFrom dplyr filter sample_n right_join mutate
-#' @importFrom tidyr pivot_longer
-#' @importFrom rlang parse_expr
-#' @importFrom forcats fct_reorder
-#' @export
-plotDistr_RGList <- function(RGList, filePath = NULL, channels = c("R","G"), FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = NULL, probeTypeValue = 0, numProbes = NULL, sampleColors = NULL, orderByColors = TRUE, 
-    scale_x_limits = NULL, width=16/9*7, height=7, ...) {
-    assertthat::assert_that(is(RGList, "RGList"))
-    assertthat::assert_that(all(channels %in% names(RGList)))
-    FUNS <- setNames(FUNS, as.character(1:length(FUNS)))
-    if (is.null(probeTypeVec)) { probeTypeVec <- rep(probeTypeValue, dim(RGList[[1]])[[1]]); titleSfx <- "" } else { titleSfx <- paste("of type", probeTypeValue, collapse=" ") }
-    assertthat::are_equal(dim(RGList[[1]])[[1]], length(probeTypeVec))
-    numProbes <- min(numProbes, dim(RGList[[1]])[[1]], sum(probeTypeVec == probeTypeValue))
-    assertthat::assert_that(is.null(sampleColors) |
-                            assertthat::are_equal(colnames(RGList[[channels[[1]]]]), names(sampleColors[[1]])))
-    assertthat::assert_that(is.logical(orderByColors))
-    plots <- list()
-    for (ch in channels) {
-        d1 <- RGList[[ch]] %>%
-                as_tibble %>%
-                add_column(probeType = probeTypeVec, .before=1) %>%
-                filter(probeType == probeTypeValue) %>%
-                sample_n(numProbes) %>%
-                pivot_longer(-probeType, names_to="HybName", values_to=ch)
-        titlePfx <- paste("Distribution of ", ch, "on", numProbes, "probes", titleSfx)
-        for (nFUN in names(FUNS)) {
-            if (!is.null(sampleColors))
-                for (cn in colnames(sampleColors)) {
-                    d2 <- sampleColors[[cn]] %>%
-                        tibble(HybName = names(.), colors=.) %>% 
-                        right_join(d1, by="HybName") %>% 
-                        mutate(HybName = factor(HybName, levels=unique(HybName)))
-                    if (orderByColors) d2 %<>% 
-                        mutate(HybName = fct_reorder(HybName, as.numeric(colors)))
-                    plots[[paste(ch,nFUN,cn, sep="_")]] <- d2 %>% 
-                        ggplot(aes(x=!!parse_expr(ch), color=HybName)) + 
-                            FUNS[[nFUN]](...) +  
-                            ggplot2::scale_color_manual(values=setNames(as.character(sampleColors[[cn]]), names(sampleColors[[cn]]))) +
-                            ggtitle(paste(titlePfx, cn))
-                }
-            else 
-                plots[[paste(ch,nFUN, sep="_")]] <- d1 %>% 
-                    mutate(HybName = as_factor(HybName)) %>% 
-                    ggplot(aes(x=!!parse_expr(ch), color=HybName)) + 
-                        FUNS[[nFUN]](...) + 
-                        ggtitle(titlePfx)
-        }
-    }
-    if (!is.null(scale_x_limits))
-        for (pn in names(plots)) plots[[pn]] <- plots[[pn]] + scale_x_continuous(limits=scale_x_limits)
-    if (!is.null(filePath)) {
-        pdf(filePath, width=width, height=height)
-        for (p1 in plots) print(p1)
-        dev.off()
-    }
-    invisible(plots)
-}
- 
-
-#' Boxplot RLE (Relative Log Expression) and correlate to RIN
-#' 
-#' Correlate RLE to median and IQR of RIN.
-#' If RIN is not giver, correlate it to straight line, i.e. test if RLEs are equal
-#' 
-#' @param expLog2 Expression matrix (preferably in log2 scale) with genes in rows and samples in columns
-#' @param filePath NULL or character; if given, output a PDF; default NULL
-#' @param RIN If given, correlate it to median and IQR of RLE; 
-#'  otherwise correlate RLE to a straight line (RLE==1 for all samples)
-#' @param width PDF width
-#' @param height PDF height
-#' @param alpha Transparency of points, passed to geom_point
-#' @param ... Passed to geom_boxplot
-#' @return ggplot2 object and PDF if filePath is given
-#' @importFrom assertthat assert_that are_equal has_name
-#' @export
-boxplotRLE <- function(expLog2, filePath=NULL, RIN=NULL, width=7, height=7, alpha=0.5, ...) {
-    require(Biobase)
-    require(magrittr)
-    require(RColorBrewer)
-    require(myHelpers)
-    assertthat::assert_that(is.null(RIN) | assertthat::are_equal(length(RIN), dim(expLog2)[[2]]))
-    RLE_row_medians <- Biobase::rowMedians(as.matrix(expLog2))
-    RLE_data <- as.data.frame(sweep(expLog2, 1, RLE_row_medians))
-    RLE_data_long <- RLE_data %>% 
-        tidyr::pivot_longer(cols=everything(), names_to="Sample", values_to="log2_expression_deviation")
-    if (!is.null(RIN)) {
-        cor_RLEmed_RIN <- cor(sapply(RLE_data, median, na.rm=TRUE), RIN, use="na.or.complete")
-        cor_RLEiqr_RIN <- cor(sapply(RLE_data, IQR, na.rm=TRUE), RIN, use="na.or.complete")
-        myCols <- myHelpers::brewPalCont(RIN, n=9, name="OrRd", digits=2)
-    } else {
-        myCols <- myHelpers::brewPalCont(rep(5,dim(expLog2)[[2]]), n=9, name="OrRd", digits=0)
-    }
-    prle <- ggplot2::ggplot(RLE_data_long, aes(Sample, log2_expression_deviation)) + 
-        geom_boxplot(outlier.shape = NA, alpha=alpha, fill=myCols, ...) +
-        scale_fill_gradient() +
-        ylim(c(-2, 2)) +
-        theme(axis.text.x = element_text(colour = "aquamarine4", angle = 60, size = 6.5, hjust = 1, face = "bold"),
-              plot.caption = element_text(hjust=0.5))
-    if (!is.null(RIN)) prle <- prle + 
-        labs(caption=paste("Correlation between RLE (median, IQR) and RIN:", format(cor_RLEmed_RIN), ",", format(cor_RLEiqr_RIN)))
-    if (!is.null(filePath)) {
-        pdf(filePath, width=width, height=height)
-        print(prle)
-        dev.off()
-    }
-    invisible(prle)
-}
 
 #' Plot heatmap(s) of gene expression using different distance calculation methods.
 #' 
@@ -831,6 +737,160 @@ plotMDStargets2_MASS <- function(expLog2, targets, colorsFrom="color_", namesFro
         dev.off()
     }
     invisible(plots)
+}
+
+
+###########################################################
+#### Plot distributions from limma::RGList style data #####
+###########################################################
+
+#' Plot distributions of signals in a RGList object using multiple colors for groups of samples
+#' 
+#' Plots distributions for each combination of FUNS, channels and sampleColors.
+#' By default, samples are ordered according to the sampleColors (if provided).
+#' Colors should be provided as factors with a preset order of levels; the order of colors is determined by the order of levels
+#' 
+#' @param RGList A list of matrices of signal intensities per channel
+#' @param filePath NULL or character; if given, output a PDF; default NULL
+#' @param channels List of data.frames from RGList, e.g. list("log2(R)", "log2(G)")
+#' @param FUNS geom_functions from ggplot2, default \code{c(geom_density, geom_boxplot)}, others: \code{c(geom_violin, geom_histogram, ggridges::geom_density_ridges)}
+#' @param probeTypeVec Vector of probe types
+#' @param probeTypeValue Value from probeTypeVec to use for plotting
+#' @param numProbes Number of randomly select probes
+#' @param sampleColors Tibble of named factors of colors with names matching sample names
+#' @param orderByColors Logical for ordering samples by colors (coded as a factor with levels in order); default TRUE
+#' @param scale_x_limits NULL for auto-scale; use c(0,16) or less for log2(intensities)
+#' @param width PDF width, default 16/9*7=12.44
+#' @param height PDF height, default 7
+#' @param ... Passed to ggplot2::FUN, e.g.: bins, binwidth, show.legend
+#' @return
+#' A list of ggplots, one per a combination of FUNS, channels and sampleColors
+#' PDF if filePath is not NULL
+#' @examples
+#' \dontrun{
+#' plotDistr_RGList(dataRG.bgc, file.path(curDir, "density-boxplot_dataRG.bgc_genes.pdf"), 
+#' channels = c("log2R","log2G","beta"), probeTypeVec = dataRG.bgc$genes$ControlType, probeTypeValue = 0,
+#' numProbes = 10000, sampleColors = targets %>% select(starts_with("color_")))
+#' ## Removed parameters/code:
+#' # transform = log2: transformation function applied to each channel (default: log2; identity for none)
+#' mutate("{{transform}}({ch})" := transform(!!parse_expr(ch)))
+#' ggplot(aes(x=transform(!!parse_expr(ch)), color=HybName)) +
+#' ggplot(d2, aes(x=!!parse_expr(ch), color=fct_reorder(HybName, order(colors)))) + #, order=colors)) + 
+#' }
+#' @section Implementation:
+#' See \url{https://www.tidyverse.org/blog/2020/02/glue-strings-and-tidy-eval/} for bracing variables.
+#' Evaluation of expression: \url{https://adv-r.hadley.nz/evaluation.html}.
+#' For \code{bquote(a +. (b))}: \url{http://adv-r.had.co.nz/Expressions.html}.
+#' @import ggplot2
+#' @importFrom assertthat assert_that are_equal
+#' @importFrom tibble add_column tibble
+#' @importFrom dplyr filter sample_n right_join mutate
+#' @importFrom tidyr pivot_longer
+#' @importFrom rlang parse_expr
+#' @importFrom forcats fct_reorder
+#' @export
+plotDistr_RGList <- function(RGList, filePath = NULL, channels = c("R","G"), FUNS = c(geom_density, geom_boxplot),
+    probeTypeVec = NULL, probeTypeValue = 0, numProbes = NULL, sampleColors = NULL, orderByColors = TRUE, 
+    scale_x_limits = NULL, width=16/9*7, height=7, ...) {
+    assertthat::assert_that(is(RGList, "RGList"))
+    assertthat::assert_that(all(channels %in% names(RGList)))
+    FUNS <- setNames(FUNS, as.character(1:length(FUNS)))
+    if (is.null(probeTypeVec)) { probeTypeVec <- rep(probeTypeValue, dim(RGList[[1]])[[1]]); titleSfx <- "" } else { titleSfx <- paste("of type", probeTypeValue, collapse=" ") }
+    assertthat::are_equal(dim(RGList[[1]])[[1]], length(probeTypeVec))
+    numProbes <- min(numProbes, dim(RGList[[1]])[[1]], sum(probeTypeVec == probeTypeValue))
+    assertthat::assert_that(is.null(sampleColors) |
+                            assertthat::are_equal(colnames(RGList[[channels[[1]]]]), names(sampleColors[[1]])))
+    assertthat::assert_that(is.logical(orderByColors))
+    plots <- list()
+    for (ch in channels) {
+        d1 <- RGList[[ch]] %>%
+                as_tibble %>%
+                add_column(probeType = probeTypeVec, .before=1) %>%
+                filter(probeType == probeTypeValue) %>%
+                sample_n(numProbes) %>%
+                pivot_longer(-probeType, names_to="HybName", values_to=ch)
+        titlePfx <- paste("Distribution of ", ch, "on", numProbes, "probes", titleSfx)
+        for (nFUN in names(FUNS)) {
+            if (!is.null(sampleColors))
+                for (cn in colnames(sampleColors)) {
+                    d2 <- sampleColors[[cn]] %>%
+                        tibble(HybName = names(.), colors=.) %>% 
+                        right_join(d1, by="HybName") %>% 
+                        mutate(HybName = factor(HybName, levels=unique(HybName)))
+                    if (orderByColors) d2 %<>% 
+                        mutate(HybName = fct_reorder(HybName, as.numeric(colors)))
+                    plots[[paste(ch,nFUN,cn, sep="_")]] <- d2 %>% 
+                        ggplot(aes(x=!!parse_expr(ch), color=HybName)) + 
+                            FUNS[[nFUN]](...) +  
+                            ggplot2::scale_color_manual(values=setNames(as.character(sampleColors[[cn]]), names(sampleColors[[cn]]))) +
+                            ggtitle(paste(titlePfx, cn))
+                }
+            else 
+                plots[[paste(ch,nFUN, sep="_")]] <- d1 %>% 
+                    mutate(HybName = as_factor(HybName)) %>% 
+                    ggplot(aes(x=!!parse_expr(ch), color=HybName)) + 
+                        FUNS[[nFUN]](...) + 
+                        ggtitle(titlePfx)
+        }
+    }
+    if (!is.null(scale_x_limits))
+        for (pn in names(plots)) plots[[pn]] <- plots[[pn]] + scale_x_continuous(limits=scale_x_limits)
+    if (!is.null(filePath)) {
+        pdf(filePath, width=width, height=height)
+        for (p1 in plots) print(p1)
+        dev.off()
+    }
+    invisible(plots)
+}
+ 
+
+#' Boxplot RLE (Relative Log Expression) and correlate to RIN
+#' 
+#' Correlate RLE to median and IQR of RIN.
+#' If RIN is not giver, correlate it to straight line, i.e. test if RLEs are equal
+#' 
+#' @param expLog2 Expression matrix (preferably in log2 scale) with genes in rows and samples in columns
+#' @param filePath NULL or character; if given, output a PDF; default NULL
+#' @param RIN If given, correlate it to median and IQR of RLE; 
+#'  otherwise correlate RLE to a straight line (RLE==1 for all samples)
+#' @param width PDF width
+#' @param height PDF height
+#' @param alpha Transparency of points, passed to geom_point
+#' @param ... Passed to geom_boxplot
+#' @return ggplot2 object and PDF if filePath is given
+#' @importFrom assertthat assert_that are_equal has_name
+#' @export
+boxplotRLE <- function(expLog2, filePath=NULL, RIN=NULL, width=7, height=7, alpha=0.5, ...) {
+    require(Biobase)
+    require(magrittr)
+    require(RColorBrewer)
+    require(myHelpers)
+    assertthat::assert_that(is.null(RIN) | assertthat::are_equal(length(RIN), dim(expLog2)[[2]]))
+    RLE_row_medians <- Biobase::rowMedians(as.matrix(expLog2))
+    RLE_data <- as.data.frame(sweep(expLog2, 1, RLE_row_medians))
+    RLE_data_long <- RLE_data %>% 
+        tidyr::pivot_longer(cols=everything(), names_to="Sample", values_to="log2_expression_deviation")
+    if (!is.null(RIN)) {
+        cor_RLEmed_RIN <- cor(sapply(RLE_data, median, na.rm=TRUE), RIN, use="na.or.complete")
+        cor_RLEiqr_RIN <- cor(sapply(RLE_data, IQR, na.rm=TRUE), RIN, use="na.or.complete")
+        myCols <- myHelpers::brewPalCont(RIN, n=9, name="OrRd", digits=2)
+    } else {
+        myCols <- myHelpers::brewPalCont(rep(5,dim(expLog2)[[2]]), n=9, name="OrRd", digits=0)
+    }
+    prle <- ggplot2::ggplot(RLE_data_long, aes(Sample, log2_expression_deviation)) + 
+        geom_boxplot(outlier.shape = NA, alpha=alpha, fill=myCols, ...) +
+        scale_fill_gradient() +
+        ylim(c(-2, 2)) +
+        theme(axis.text.x = element_text(colour = "aquamarine4", angle = 60, size = 6.5, hjust = 1, face = "bold"),
+              plot.caption = element_text(hjust=0.5))
+    if (!is.null(RIN)) prle <- prle + 
+        labs(caption=paste("Correlation between RLE (median, IQR) and RIN:", format(cor_RLEmed_RIN), ",", format(cor_RLEiqr_RIN)))
+    if (!is.null(filePath)) {
+        pdf(filePath, width=width, height=height)
+        print(prle)
+        dev.off()
+    }
+    invisible(prle)
 }
 
 
