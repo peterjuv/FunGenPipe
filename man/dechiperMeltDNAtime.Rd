@@ -8,6 +8,7 @@ dechiperMeltDNAtime(
   myGRanges,
   myBSgenome,
   Trange = seq(50, 100, 1),
+  ions = 0.2,
   dropMcols = c("seq", "Trange", "ThetaDerivative", "maxThetaDerivative", "TmList")
 )
 }
@@ -16,7 +17,9 @@ dechiperMeltDNAtime(
 
 \item{myBSgenome}{BSgenome object}
 
-\item{Trange}{Range of melting temperatures for calculation of Theta derivatives, optional, default 50:100}
+\item{Trange}{Numeric vector of melting temperatures for calculation of Theta derivatives, forwarded to \code{DECIPHER::MeltDNA}; optional, default 50:100}
+
+\item{ions}{Numeric molar sodium equivalent ionic concentration, forwarded to \code{DECIPHER::MeltDNA}; optional, default 0.2}
 
 \item{dropMcols}{Intermediate columns to drop, default c("seq","Trange","ThetaDerivative","maxThetaDerivative","TmList"), NULL to include all}
 }

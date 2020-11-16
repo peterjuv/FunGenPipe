@@ -30,7 +30,8 @@ NULL
 #' Tm is set to NA in case of multiple Tm values.
 #' @param myGRanges GRanges, ranges of sequences with a specified genome
 #' @param myBSgenome BSgenome object
-#' @param Trange Range of melting temperatures for calculation of Theta derivatives, optional, default 50:100
+#' @param Trange Numeric vector of melting temperatures for calculation of Theta derivatives, forwarded to \code{DECIPHER::MeltDNA}; optional, default 50:100
+#' @param ions Numeric molar sodium equivalent ionic concentration, forwarded to \code{DECIPHER::MeltDNA}; optional, default 0.2
 #' @param dropMcols Intermediate columns to drop, default c("seq","Trange","ThetaDerivative","maxThetaDerivative","TmList"), NULL to include all
 #' @return GRanges with melting temperatures added to mcols column "Tm" and optional intermediate columns with sequences (seq), (max)ThetaDerivative, list of Tm (TmList); message execution time
 #' @importFrom magrittr %>%
@@ -42,7 +43,7 @@ NULL
 #' @importFrom purrr map2 map_dbl pmap map_if
 #' @importFrom DECIPHER MeltDNA
 #' @export
-dechiperMeltDNAtime <- function(myGRanges, myBSgenome, Trange=seq(50,100,1), 
+dechiperMeltDNAtime <- function(myGRanges, myBSgenome, Trange=seq(50,100,1), ions=0.2,
     dropMcols=c("seq","Trange","ThetaDerivative","maxThetaDerivative","TmList")) {
     require(myBSgenome)
     assertthat::assert_that(all(GenomeInfoDb::genome(myGRanges) %in% GenomeInfoDb::genome(myBSgenome))) # test genome names
@@ -52,7 +53,7 @@ dechiperMeltDNAtime <- function(myGRanges, myBSgenome, Trange=seq(50,100,1),
     dss <- Biostrings::getSeq(myBSgenome, myGRanges)
     wdss <- which(width(dss) > 2)
     # dim(thDer) == Trange x myGRanges[wdss]
-    thDer.w <- DECIPHER::MeltDNA(dss[wdss], type="derivative", Trange)
+    thDer.w <- DECIPHER::MeltDNA(dss[wdss], type="derivative", temps=Trange, ions=ions)
     thDerList.w <- lapply(seq_len(ncol(thDer.w)), function(i) thDer.w[,i])
     tbSeqTm.w <- dss[wdss] %>% 
         as.character() %>%
