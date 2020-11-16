@@ -31,7 +31,8 @@ NULL
 #' @param myGRanges GRanges, ranges of sequences with a specified genome
 #' @param myBSgenome BSgenome object
 #' @param Trange Range of melting temperatures for calculation of Theta derivatives, optional, default 50:100
-#' @return Tibble with names of ranges (name) and Tm; additionally, sequences (seq), (max)ThetaDerivative, list of Tm (TmList); message execution time
+#' @param dropMcols Intermediate columns to drop, default c("seq","Trange","ThetaDerivative","maxThetaDerivative","TmList"), NULL to include all
+#' @return GRanges with melting temperatures added to mcols column "Tm" and optional intermediate columns with sequences (seq), (max)ThetaDerivative, list of Tm (TmList); message execution time
 #' @importFrom magrittr %>%
 #' @importFrom assertthat assert_that
 #' @importFrom GenomeInfoDb genome seqnames
@@ -41,26 +42,39 @@ NULL
 #' @importFrom purrr map2 map_dbl pmap map_if
 #' @importFrom DECIPHER MeltDNA
 #' @export
-dechiperMeltDNAtime <- function(myGRanges, myBSgenome, Trange=seq(50,100,1)) {
+dechiperMeltDNAtime <- function(myGRanges, myBSgenome, Trange=seq(50,100,1), 
+    dropMcols=c("seq","Trange","ThetaDerivative","maxThetaDerivative","TmList")) {
     require(myBSgenome)
     assertthat::assert_that(all(GenomeInfoDb::genome(myGRanges) %in% GenomeInfoDb::genome(myBSgenome))) # test genome names
     assertthat::assert_that(all(names(GenomeInfoDb::genome(myGRanges)) %in% GenomeInfoDb::seqnames(myBSgenome))) # test seqnames
     timeDECHIPER = list()
     timeDECHIPER[["start"]] <- Sys.time()
-    tbSeqTm <- Biostrings::getSeq(myBSgenome, myGRanges) %>% 
+    dss <- Biostrings::getSeq(myBSgenome, myGRanges)
+    wdss <- which(width(dss) > 2)
+    # dim(thDer) == Trange x myGRanges[wdss]
+    thDer.w <- DECIPHER::MeltDNA(dss[wdss], type="derivative", Trange)
+    thDerList.w <- lapply(seq_len(ncol(thDer.w)), function(i) thDer.w[,i])
+    tbSeqTm.w <- dss[wdss] %>% 
         as.character() %>%
-        tibble::tibble(name = names(.), seq = ., temps = list(Trange)) %>% 
+        tibble::tibble(name = names(.), seq = ., Trange = list(Trange)) %>% 
         dplyr::mutate(
-            ThetaDerivative = purrr::map2(seq, temps, 
-                ~ tryCatch(as.numeric(DECIPHER::MeltDNA(.x, type="derivative", temps=.y)), error=function(e) NA)),
+            ThetaDerivative = tibble::enframe(thDerList.w)$value,
             maxThetaDerivative = purrr::map_dbl(ThetaDerivative, max),
-            TmList = purrr::pmap(list(temps, ThetaDerivative, maxThetaDerivative), 
+            TmList = purrr::pmap(list(Trange, ThetaDerivative, maxThetaDerivative), 
                 ~ tryCatch(..1[which(..2 == ..3)], error=function(e) NA)),
-            Tm = unlist(purrr::map_if(TmList, ~ length(.) != 1, ~ NA))
-        )
+            Tm = unlist(purrr::map_if(TmList, ~ length(.) != 1, ~ NA)),
+            tmp_idx = wdss
+        ) %>% 
+        dplyr::relocate(Tm)
     timeDECHIPER[["finish"]] <- Sys.time()
     message(paste("DECHIPER::MeldDNA start:", timeDECHIPER[["start"]], "finish: ", timeDECHIPER[["finish"]]))
-    return(tbSeqTm)
+    S4Vectors::mcols(myGRanges) <- S4Vectors::mcols(myGRanges) %>%
+        tibble::as_tibble() %>% 
+        dplyr::mutate(tmp_idx = seq(n())) %>% 
+        dplyr::left_join(tbSeqTm.w, by="tmp_idx") %>% 
+        dplyr::select(-tmp_idx, -name) %>% 
+        dplyr::select(-tidyselect::any_of(dropMcols))
+    return(myGRanges)
 }
 
 ############################

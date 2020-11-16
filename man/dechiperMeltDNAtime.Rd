@@ -4,7 +4,12 @@
 \alias{dechiperMeltDNAtime}
 \title{Calculate melting temperatures from ranges using a specified genome.}
 \usage{
-dechiperMeltDNAtime(myGRanges, myBSgenome, Trange = seq(50, 100, 1))
+dechiperMeltDNAtime(
+  myGRanges,
+  myBSgenome,
+  Trange = seq(50, 100, 1),
+  dropMcols = c("seq", "Trange", "ThetaDerivative", "maxThetaDerivative", "TmList")
+)
 }
 \arguments{
 \item{myGRanges}{GRanges, ranges of sequences with a specified genome}
@@ -12,9 +17,11 @@ dechiperMeltDNAtime(myGRanges, myBSgenome, Trange = seq(50, 100, 1))
 \item{myBSgenome}{BSgenome object}
 
 \item{Trange}{Range of melting temperatures for calculation of Theta derivatives, optional, default 50:100}
+
+\item{dropMcols}{Intermediate columns to drop, default c("seq","Trange","ThetaDerivative","maxThetaDerivative","TmList"), NULL to include all}
 }
 \value{
-Tibble with names of ranges (name) and Tm; additionally, sequences (seq), (max)ThetaDerivative, list of Tm (TmList); message execution time
+GRanges with melting temperatures added to mcols column "Tm" and optional intermediate columns with sequences (seq), (max)ThetaDerivative, list of Tm (TmList); message execution time
 }
 \description{
 Tm is estimated from a range of temperatures (Trange) by finding a max of ThetaDerivative over that range.

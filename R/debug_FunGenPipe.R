@@ -1,116 +1,136 @@
+#### OLD
+# dechiperMeltDNAtime <- function(myGRanges, myBSgenome, Trange=seq(50,100,1)) {
+#     require(myBSgenome)
+#     assertthat::assert_that(all(GenomeInfoDb::genome(myGRanges) %in% GenomeInfoDb::genome(myBSgenome))) # test genome names
+#     assertthat::assert_that(all(names(GenomeInfoDb::genome(myGRanges)) %in% GenomeInfoDb::seqnames(myBSgenome))) # test seqnames
+#     timeDECHIPER = list()
+#     timeDECHIPER[["start"]] <- Sys.time()
+#     tbSeqTm <- Biostrings::getSeq(myBSgenome, myGRanges) %>% 
+#         as.character() %>%
+#         tibble::tibble(name = names(.), seq = ., temps = list(Trange)) %>% 
+#         dplyr::mutate(
+#             ThetaDerivative = purrr::map2(seq, temps, 
+#                 ~ tryCatch(as.numeric(DECIPHER::MeltDNA(.x, type="derivative", temps=.y)), error=function(e) NA)),
+#             maxThetaDerivative = purrr::map_dbl(ThetaDerivative, max),
+#             TmList = purrr::pmap(list(temps, ThetaDerivative, maxThetaDerivative), 
+#                 ~ tryCatch(..1[which(..2 == ..3)], error=function(e) NA)),
+#             Tm = unlist(purrr::map_if(TmList, ~ length(.) != 1, ~ NA))
+#         )
+#     timeDECHIPER[["finish"]] <- Sys.time()
+#     message(paste("DECHIPER::MeldDNA start:", timeDECHIPER[["start"]], "finish: ", timeDECHIPER[["finish"]]))
+#     return(tbSeqTm)
+# }
+
 #### plotDistrTargets2
 if (FALSE) {
-## limmaList
-ll <- list(R=c(1,2), G=c(2,4))
-library(tidyverse)
-ch <- rlang::quo(log2(R))
-ch <- rlang::quo(R)
-rlang::eval_tidy(ch, ll %>% as_tibble) 
-rlang::expr_text(ch)
-rlang::quo_name(ch)
-#colPats <- getColPats2(targets)
-colorsFrom="color_"
-(colPats <- getColPats2(targets, colorsFrom=colorsFrom, namesFrom=HybName))
-(colPats <- getColPats2(targets, colorsFrom=colorsFrom, namesFrom=Birth3WHO))
-(colPats <- getColPats2(targets, colorsFrom=colorsFrom, rename=FALSE))
-nColPat <- names(colPats)[[1]]
-expLog2 <- log2(dataRG$R)[1:100,]
-colnames(expLog2)
-te <- expLog2 %>% as_tibble %>% sample_n(33)
-colnames(te)
-colnames(te) <- myHelpers::defactorChr(pluck(targets, "Birth3"))
-probeTypeVec <- rep(0,100)
-probeTypeValue = 0
-numProbes = NULL
-orderByColors = TRUE
-FUNS = c(geom_density, geom_boxplot)
+    ## limmaList
+    ll <- list(R=c(1,2), G=c(2,4))
+    library(tidyverse)
+    ch <- rlang::quo(log2(R))
+    ch <- rlang::quo(R)
+    rlang::eval_tidy(ch, ll %>% as_tibble) 
+    rlang::expr_text(ch)
+    rlang::quo_name(ch)
+    #colPats <- getColPats2(targets)
+    colorsFrom="color_"
+    (colPats <- getColPats2(targets, colorsFrom=colorsFrom, namesFrom=HybName))
+    (colPats <- getColPats2(targets, colorsFrom=colorsFrom, namesFrom=Birth3WHO))
+    (colPats <- getColPats2(targets, colorsFrom=colorsFrom, rename=FALSE))
+    nColPat <- names(colPats)[[1]]
+    expLog2 <- log2(dataRG$R)[1:100,]
+    colnames(expLog2)
+    te <- expLog2 %>% as_tibble %>% sample_n(33)
+    colnames(te)
+    colnames(te) <- myHelpers::defactorChr(pluck(targets, "Birth3"))
+    probeTypeVec <- rep(0,100)
+    probeTypeValue = 0
+    numProbes = NULL
+    orderByColors = TRUE
+    FUNS = c(geom_density, geom_boxplot)
 
-le <- te %>% tidyr::pivot_longer(tidyselect::everything(), names_to="HybName", values_to="Values")
-print(myHelpers::defactorChr(pluck(le, "HybName")))
-str(pluck(le, "HybName"))
-oldColNames <- colnames(te)
-newColNames <- sub("(.*)_mibi...", "\\1", oldColNames)
-newColNames <- as.factor(newColNames)
-#' ter <- te %>% dplyr::rename(!!!purrr::set_names(oldColNames, newColNames))
-#' ter <- te %>% dplyr::rename_with(~ sub("(.*)_mibi...", "\\1", .x))
-ter <- te
-colnames(ter) <- newColNames
-ter
-(ter %>% tidyr::pivot_longer(tidyselect::everything(), names_to="HybName", values_to="Values"))$HybName[300:1000]
-        dplyr::mutate("{{namesFrom}}" := dplyr::recode_factor({{namesFrom}}, setNames(colnames(.x), pluck(targets, nNamesFrom))))
+    le <- te %>% tidyr::pivot_longer(tidyselect::everything(), names_to="HybName", values_to="Values")
+    print(myHelpers::defactorChr(pluck(le, "HybName")))
+    str(pluck(le, "HybName"))
+    oldColNames <- colnames(te)
+    newColNames <- sub("(.*)_mibi...", "\\1", oldColNames)
+    newColNames <- as.factor(newColNames)
+    #' ter <- te %>% dplyr::rename(!!!purrr::set_names(oldColNames, newColNames))
+    #' ter <- te %>% dplyr::rename_with(~ sub("(.*)_mibi...", "\\1", .x))
+    ter <- te
+    colnames(ter) <- newColNames
+    ter
+    (ter %>% tidyr::pivot_longer(tidyselect::everything(), names_to="HybName", values_to="Values"))$HybName[300:1000]
+            dplyr::mutate("{{namesFrom}}" := dplyr::recode_factor({{namesFrom}}, setNames(colnames(.x), pluck(targets, nNamesFrom))))
 
-tec <- te %>% tidyr::pivot_longer(tidyselect::everything(), names_to="HybName", values_to="Values")
-dplyr::recode_factor(tec$HybName, !!!setNames(pluck(targets, "Birth3WHO"), colnames(te)))
-dplyr::recode(tec$HybName, !!!setNames(pluck(targets, "Birth3WHO"), colnames(te)))
-tec %>% dplyr::mutate(HybName = dplyr::recode(HybName, !!!setNames(pluck(targets, "Birth3WHO"), colnames(te))))
+    tec <- te %>% tidyr::pivot_longer(tidyselect::everything(), names_to="HybName", values_to="Values")
+    dplyr::recode_factor(tec$HybName, !!!setNames(pluck(targets, "Birth3WHO"), colnames(te)))
+    dplyr::recode(tec$HybName, !!!setNames(pluck(targets, "Birth3WHO"), colnames(te)))
+    tec %>% dplyr::mutate(HybName = dplyr::recode(HybName, !!!setNames(pluck(targets, "Birth3WHO"), colnames(te))))
 
-for (nColPat in names(colPats)) {
-    print(colPats[[nColPat]] %>% tibble::tibble("{nColPat}" := names(.), colors=.))
-}
+    for (nColPat in names(colPats)) {
+        print(colPats[[nColPat]] %>% tibble::tibble("{nColPat}" := names(.), colors=.))
+    }
 
-#' @examples
-expLog2 <- log2(dataRG$R)[1:100,]
-## rename=TRUE (default)
-## namesFrom=NULL,     orderByColors=TRUE
-plotDistrTargets2(expLog2, targets, colorsFrom="color_", namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, 
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-NULL.pdf"))
-## namesFrom=HybName
-plotDistrTargets2(expLog2, targets, colorsFrom="color_", namesFrom=HybName, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, 
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-HybName.pdf"))
-## namesFrom=Birth3WHO
-plotDistrTargets2(expLog2, targets, colorsFrom="color_", namesFrom=Birth3WHO, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, 
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-Birth3WHO.pdf"))
-## namesFrom=HybName,  orderByColors=FALSE
-plotDistrTargets2(expLog2, targets, colorsFrom="color_", namesFrom=HybName, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-HybName-noReorder.pdf"))
-## rename=FALSE () (implies namesFrom=NULL)
-## orderByColors=TRUE
-plotDistrTargets2(expLog2, targets, colorsFrom="color_", rename=FALSE, namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, 
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-noRename.pdf"))
-## orderByColors=FALSE
-plotDistrTargets2(expLog2, targets, colorsFrom="color_", rename=FALSE, namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-noRename-noReorder.pdf"))
-## warning: rename=FALSE $ namesFrom!=NULL
-plotDistrTargets2(expLog2, targets, colorsFrom="color_", rename=FALSE, namesFrom=Birth2, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-warning.pdf"))
-## w/o targets
-getColPats2(NULL, unique=TRUE)
-plotDistrTargets2(expLog2, NULL, colorsFrom="color_", rename=TRUE, namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-noTargets.pdf"))
-## non-unique column names
-exxx <- expLog2
-colnames(exxx) <- names(getColPats2(targets, namesFrom=Birth3WHO, pullVar=Birth3WHO))
-plotDistrTargets2(exxx, NULL, colorsFrom="color_", rename=TRUE, namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug4_plotDistrTargets2-euqalSampleNames-noTargets-.pdf"))
-plotDistrTargets2(exxx, targets, colorsFrom="color_", rename=TRUE, namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
-    probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
-    scale_x_limits = NULL, filePath = file.path(resultDir, "_debug4_plotDistrTargets2-euqalSampleNames.pdf"))
-#' -------------
+    #' @examples
+    expLog2 <- log2(dataRG$R)[1:100,]
+    ## rename=TRUE (default)
+    ## namesFrom=NULL,     orderByColors=TRUE
+    plotDistrTargets2(expLog2, targets, colorsFrom="color_", namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
+        probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, 
+        scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-NULL.pdf"))
+    ## namesFrom=HybName
+    plotDistrTargets2(expLog2, targets, colorsFrom="color_", namesFrom=HybName, FUNS = c(geom_density, geom_boxplot),
+        probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, 
+        scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-HybName.pdf"))
+    ## namesFrom=Birth3WHO
+    plotDistrTargets2(expLog2, targets, colorsFrom="color_", namesFrom=Birth3WHO, FUNS = c(geom_density, geom_boxplot),
+        probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, 
+        scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-Birth3WHO.pdf"))
+    ## namesFrom=HybName,  orderByColors=FALSE
+    plotDistrTargets2(expLog2, targets, colorsFrom="color_", namesFrom=HybName, FUNS = c(geom_density, geom_boxplot),
+        probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
+        scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-HybName-noReorder.pdf"))
+    ## rename=FALSE () (implies namesFrom=NULL)
+    ## orderByColors=TRUE
+    plotDistrTargets2(expLog2, targets, colorsFrom="color_", rename=FALSE, namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
+        probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, 
+        scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-noRename.pdf"))
+    ## orderByColors=FALSE
+    plotDistrTargets2(expLog2, targets, colorsFrom="color_", rename=FALSE, namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
+        probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
+        scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-noRename-noReorder.pdf"))
+    ## warning: rename=FALSE $ namesFrom!=NULL
+    plotDistrTargets2(expLog2, targets, colorsFrom="color_", rename=FALSE, namesFrom=Birth2, FUNS = c(geom_density, geom_boxplot),
+        probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
+        scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-warning.pdf"))
+    ## w/o targets
+    getColPats2(NULL, unique=TRUE)
+    plotDistrTargets2(expLog2, NULL, colorsFrom="color_", rename=TRUE, namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
+        probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
+        scale_x_limits = NULL, filePath = file.path(resultDir, "_debug3_plotDistrTargets2-noTargets.pdf"))
+    ## non-unique column names
+    exxx <- expLog2
+    colnames(exxx) <- names(getColPats2(targets, namesFrom=Birth3WHO, pullVar=Birth3WHO))
+    plotDistrTargets2(exxx, NULL, colorsFrom="color_", rename=TRUE, namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
+        probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
+        scale_x_limits = NULL, filePath = file.path(resultDir, "_debug4_plotDistrTargets2-euqalSampleNames-noTargets-.pdf"))
+    plotDistrTargets2(exxx, targets, colorsFrom="color_", rename=TRUE, namesFrom=NULL, FUNS = c(geom_density, geom_boxplot),
+        probeTypeVec = probeTypeVec, probeTypeValue = 0, numProbes = NULL, orderByColors = FALSE,
+        scale_x_limits = NULL, filePath = file.path(resultDir, "_debug4_plotDistrTargets2-euqalSampleNames.pdf"))
+    #' -------------
 
-ff <- function(expLog2) {
-    print(as.character(rlang::fn_fmls()))
-    print(names(formals()))
-    print(methods::formalArgs(sys.function(sys.parent())))
-    print(rlang::quo_name(rlang::enquo(expLog2)))
-    print(rlang::quo_name(rlang::quo(expLog2)))
-    print(substitute(expLog2))
-}
-ff(c(1,2))
-aa <- c(1,2)
-ff(aa)
-ff(exxx)
-
-
-
+    ff <- function(expLog2) {
+        print(as.character(rlang::fn_fmls()))
+        print(names(formals()))
+        print(methods::formalArgs(sys.function(sys.parent())))
+        print(rlang::quo_name(rlang::enquo(expLog2)))
+        print(rlang::quo_name(rlang::quo(expLog2)))
+        print(substitute(expLog2))
+    }
+    ff(c(1,2))
+    aa <- c(1,2)
+    ff(aa)
+    ff(exxx)
 }
 ## WORKING w/o namesFrom=NULL
 # #' Plot distributions of signals from limma RGList, MAList, EList or EListRaw objects 
