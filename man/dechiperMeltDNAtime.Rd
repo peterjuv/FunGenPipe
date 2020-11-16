@@ -9,7 +9,8 @@ dechiperMeltDNAtime(
   myBSgenome,
   Trange = seq(50, 100, 1),
   ions = 0.2,
-  dropMcols = c("seq", "Trange", "ThetaDerivative", "maxThetaDerivative", "TmList")
+  dropMcols = c("seq", "width", "Trange", "ThetaDerivative", "maxThetaDerivative",
+    "TmList")
 )
 }
 \arguments{
@@ -21,10 +22,11 @@ dechiperMeltDNAtime(
 
 \item{ions}{Numeric molar sodium equivalent ionic concentration, forwarded to \code{DECIPHER::MeltDNA}; optional, default 0.2}
 
-\item{dropMcols}{Intermediate columns to drop, default c("seq","Trange","ThetaDerivative","maxThetaDerivative","TmList"), NULL to include all}
+\item{dropMcols}{Intermediate columns to drop, default c("seq","width",Trange","ThetaDerivative","maxThetaDerivative","TmList"), NULL to include all}
 }
 \value{
-GRanges with melting temperatures added to mcols column "Tm" and optional intermediate columns with sequences (seq), (max)ThetaDerivative, list of Tm (TmList); message execution time
+GRanges with melting temperatures added to mcols column "Tm" and optional intermediate columns
+sequences and widths, (max)ThetaDerivative & list of Tms in case max Tm not unique; message execution time
 }
 \description{
 Tm is estimated from a range of temperatures (Trange) by finding a max of ThetaDerivative over that range.

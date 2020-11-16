@@ -32,8 +32,9 @@ NULL
 #' @param myBSgenome BSgenome object
 #' @param Trange Numeric vector of melting temperatures for calculation of Theta derivatives, forwarded to \code{DECIPHER::MeltDNA}; optional, default 50:100
 #' @param ions Numeric molar sodium equivalent ionic concentration, forwarded to \code{DECIPHER::MeltDNA}; optional, default 0.2
-#' @param dropMcols Intermediate columns to drop, default c("seq","Trange","ThetaDerivative","maxThetaDerivative","TmList"), NULL to include all
-#' @return GRanges with melting temperatures added to mcols column "Tm" and optional intermediate columns with sequences (seq), (max)ThetaDerivative, list of Tm (TmList); message execution time
+#' @param dropMcols Intermediate columns to drop, default c("seq","width",Trange","ThetaDerivative","maxThetaDerivative","TmList"), NULL to include all
+#' @return GRanges with melting temperatures added to mcols column "Tm" and optional intermediate columns
+#' sequences and widths, (max)ThetaDerivative & list of Tms in case max Tm not unique; message execution time
 #' @importFrom magrittr %>%
 #' @importFrom assertthat assert_that
 #' @importFrom GenomeInfoDb genome seqnames
@@ -44,7 +45,7 @@ NULL
 #' @importFrom DECIPHER MeltDNA
 #' @export
 dechiperMeltDNAtime <- function(myGRanges, myBSgenome, Trange=seq(50,100,1), ions=0.2,
-    dropMcols=c("seq","Trange","ThetaDerivative","maxThetaDerivative","TmList")) {
+    dropMcols=c("seq","width","Trange","ThetaDerivative","maxThetaDerivative","TmList")) {
     require(myBSgenome)
     assertthat::assert_that(all(GenomeInfoDb::genome(myGRanges) %in% GenomeInfoDb::genome(myBSgenome))) # test genome names
     assertthat::assert_that(all(names(GenomeInfoDb::genome(myGRanges)) %in% GenomeInfoDb::seqnames(myBSgenome))) # test seqnames
@@ -55,9 +56,9 @@ dechiperMeltDNAtime <- function(myGRanges, myBSgenome, Trange=seq(50,100,1), ion
     # dim(thDer) == Trange x myGRanges[wdss]
     thDer.w <- DECIPHER::MeltDNA(dss[wdss], type="derivative", temps=Trange, ions=ions)
     thDerList.w <- lapply(seq_len(ncol(thDer.w)), function(i) thDer.w[,i])
-    tbSeqTm.w <- dss[wdss] %>% 
-        as.character() %>%
-        tibble::tibble(name = names(.), seq = ., Trange = list(Trange)) %>% 
+    tbSeqTm.w <- dss[wdss] %>% {
+        tibble::tibble(name = names(.), seq = as.character(.), width = width(.), Trange = list(Trange))
+        } %>%
         dplyr::mutate(
             ThetaDerivative = tibble::enframe(thDerList.w)$value,
             maxThetaDerivative = purrr::map_dbl(ThetaDerivative, max),
