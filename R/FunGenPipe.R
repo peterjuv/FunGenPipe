@@ -8,7 +8,7 @@
 #' @section Plot distributions, heatmap, PCA & MDS using targets meta-data
 #' Note: the order od data columns should (always) be kept in the order of targets.
 #' plotDistrTargets2
-#' pheatmapTargets
+#' pheatmapTargets2
 #' plotPCAtargets2
 #' plotPCAtargets - depricated
 #' plotMDStargets2
@@ -406,29 +406,37 @@ plotDistrTargets2 <- function(expLog2, targets, colorsFrom = "color_", rename = 
 #' @param treeheight_row Passed to pheatmap; default 0; 50 for pheatmap
 #' @param ... Passed to pheatmap
 #' @return ggplot2 object and PDF if filePath is given
+#' @importFrom assertthat assert_that
+#' @importFrom magrittr %>%
+#' @importFrom rlang enquo
+#' @importFrom grDevices colorRampPalette
+#' @importFrom RColorBrewer brewer.pal
+#' @importFrom pheatmap pheatmap
+#' @importFrom grid grid.newpage grid.draw
 #' @export
-pheatmapTargets <- function(expLog2, targets, methods=c("manhattan", "euclidean"),
+pheatmapTargets2 <- function(expLog2, targets, methods=c("manhattan", "euclidean"),
     colorsFrom="color_", namesFrom=NULL, filePath=NULL, width=7, height=7, treeheight_row = 0, ...) {
     require(pheatmap)
     require(stringr)
     require(rlang)
     require(gtable)
-    namesFrom <- enquo(namesFrom)
+    assertthat::assert_that(is.matrix(expLog2))
+    namesFrom <- rlang::enquo(namesFrom)
     p <- list()
     for (method in methods) {
         dists <- as.matrix(dist(t(expLog2), method=method))
         rownames(dists) <- colnames(expLog2)
         colnames(dists) <- NULL
         diag(dists) <- NA
-        hmcol <- colorRampPalette(RColorBrewer::brewer.pal(9, "YlOrRd"))(255)
-        annRows <- getColPats2(targets, colorsFrom=colorsFrom, namesFrom=!!namesFrom)
+        hmcol <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(9, "YlOrRd"))(255)
+        annRows <- getColPats2(targets, colorsFrom=colorsFrom, namesFrom={{namesFrom}})
         annRowsN <- as.data.frame(lapply(annRows, FUN=names))
         row.names(annRowsN) <- colnames(expLog2)
-        p[[method]] <- pheatmap(
+        p[[method]] <- pheatmap::pheatmap(
            dists,
            col = (hmcol), 
            annotation_row = annRowsN,
-           annotation_colors = getColPats2(targets, unique=TRUE, colorsFrom=colorsFrom, namesFrom=!!namesFrom),
+           annotation_colors = getColPats2(targets, unique=TRUE, colorsFrom=colorsFrom, namesFrom={{namesFrom}}),
            treeheight_row = treeheight_row,
            legend_breaks = c(min(dists, na.rm = TRUE), max(dists, na.rm = TRUE)), 
            legend_labels = (c("similar", "diverse")),
@@ -440,8 +448,8 @@ pheatmapTargets <- function(expLog2, targets, methods=c("manhattan", "euclidean"
     if (!is.null(filePath)) {
         pdf(filePath, width=width, height=height)
         for (p1 in p) {
-            grid.newpage()
-            grid.draw(p1)
+            grid::grid.newpage()
+            grid::grid.draw(p1)
         }
         dev.off()
     }
