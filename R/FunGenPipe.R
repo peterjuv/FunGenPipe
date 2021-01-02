@@ -1447,7 +1447,7 @@ gscKeggEntrez <- function(organism="mmu", annPrb, annKeggEntrez, keggPathOrgIDs,
         # #addCol=NA
         # ### DEBUG END
 
-        # writeAnnTTlogFCcounts <- function(filepath, tabList, tabNames=NULL, id="DB_ID", logFC="logFC", nameCol="SYMBOL", addCol=NA) {
+        # getWriteAnnTTlogFCcounts <- function(filepath, tabList, tabNames=NULL, id="DB_ID", logFC="logFC", nameCol="SYMBOL", addCol=NA) {
         #     #### Count genes/pathways that are DE/enriched (in 3+ datasets) and output DE/enriched logFC values, else NA 
         #     #### addCol useful for adding a list of DE gene symbols to enriched sets
         #     require(dplyr)
@@ -1470,13 +1470,14 @@ gscKeggEntrez <- function(organism="mmu", annPrb, annKeggEntrez, keggPathOrgIDs,
         #             logFCmeans <- aggregate(tabList[[tabName]][,logFC], by=list(id=tabList[[tabName]][,id], nameCol=tabList[[tabName]][,nameCol]), mean)
         #             colnames(logFCmeans) <- c(id, nameCol, logFC)
         #         }
-        #         logFCs <- dplyr::dplyr::full_join(logFCs, logFCmeans, by=c(id, nameCol))
+        #         logFCs <- dplyr::full_join(logFCs, logFCmeans, by=c(id, nameCol))
         #     }
         #     if (is.na(addCol)) colnames(logFCs) <- c(id, nameCol, paste(names(tabNames), logFC)) else colnames(logFCs) <- c(id, nameCol, paste(rep(names(tabNames),each=2), c(addCol, logFC)))
         #     logFCs$CountBoth <- apply(logFCs[,paste(names(tabNames), logFC)], MARGIN=1, FUN=function(x){sum(!is.na(x))})
         #     logFCs$CountPos <-  apply(logFCs[,paste(names(tabNames), logFC)], MARGIN=1, FUN=function(x){sum(x>0 & !is.na(x))})
         #     logFCs$CountNeg <-  apply(logFCs[,paste(names(tabNames), logFC)], MARGIN=1, FUN=function(x){sum(x<0 & !is.na(x))})
         #     write.table(logFCs, filepath, sep="\t", quote=FALSE, row.names=FALSE)
+        #     return(logFCs)
         # }
 
 
