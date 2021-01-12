@@ -312,7 +312,7 @@ getColPats2 <- function(targets, colorsFrom="color_", rename=TRUE, namesFrom=NUL
 #' @importFrom dplyr filter sample_n right_join mutate
 #' @importFrom tidyr pivot_longer
 #' @importFrom tidyselect everything
-#' @importFrom rlang enquo eval_tidy quo_name quo_is_null :=
+#' @importFrom rlang enquo eval_tidy quo_name quo_is_null
 #' @importFrom forcats fct_reorder
 #' @importFrom purrr set_names
 #' @importFrom vctrs vec_as_names
@@ -493,19 +493,22 @@ pheatmapTargets2 <- function(expLog2, targets, methods=c("manhattan", "euclidean
 #' Access data of an existing ggplot using .$data inside {}, e.g. { . + scale_color_manual(..., .$data) }
 #' @import ggplot2
 #' @importFrom assertthat assert_that are_equal
+#' @importFrom magrittr %>% %<>%
+#' @importFrom tibble as_tibble
+#' @importFrom dplyr mutate pull
+#' @importFrom rlang enquo eval_tidy quo_is_null
+#' @importFrom purrr map_lgl
+#' @importFrom myHelpers defactorChr
 #' @export
 plotPCAtargets2 <- function(expLog2, targets, shape = NULL, color = NULL, fill = NULL, size = NULL,
     colorsFrom = "color_", filePath = NULL, width = 7, height = 7, 
     stroke = 1, alpha = 0.75, sizeUniform = 4, sizeRange = c(3,5), ...) {
-    require(rlang)
-    require(magrittr)
-    require(myHelpers)
     assertthat::are_equal(dim(expLog2)[[2]], dim(targets)[[1]])
     assertthat::are_equal(colnames(expLog2), rownames(targets))
     ## enquo vars for aes
-    varsAes <- enquos(shape = shape, color = color, fill = fill, size = size, .ignore_empty = "all")
-    varsAesNotNull <- varsAes[map_lgl(varsAes, ~!quo_is_null(.x))]
-    callAes <- call2("aes", !!!varsAesNotNull)
+    varsAes <- rlang::enquos(shape = shape, color = color, fill = fill, size = size, .ignore_empty = "all")
+    varsAesNotNull <- varsAes[purrr::map_lgl(varsAes, ~!rlang::quo_is_null(.x))]
+    callAes <- rlang::call2("aes", !!!varsAesNotNull)
     # PCA
     PCA <- prcomp(t(expLog2), scale = FALSE)
     percentVar <- round(100*PCA$sdev^2/sum(PCA$sdev^2),1)
@@ -513,10 +516,10 @@ plotPCAtargets2 <- function(expLog2, targets, shape = NULL, color = NULL, fill =
     ## plot
     p <- targets %>% 
         tibble::as_tibble() %>% 
-        mutate(PC1 = PCA$x[,1], PC2 = PCA$x[,2]) %>% 
+        dplyr::mutate(PC1 = PCA$x[,1], PC2 = PCA$x[,2]) %>% 
     {
         ggplot(., aes(PC2, PC1)) +
-        geom_point(mapping=eval_tidy(callAes), stroke=stroke, alpha=alpha, ...) +
+        geom_point(mapping=rlang::eval_tidy(callAes), stroke=stroke, alpha=alpha, ...) +
         ggtitle("PCA plot") +
         ylab(paste0("PC1, VarExp: ", percentVar[1], "%")) +
         xlab(paste0("PC2, VarExp: ", percentVar[2], "%")) +
@@ -524,13 +527,13 @@ plotPCAtargets2 <- function(expLog2, targets, shape = NULL, color = NULL, fill =
         coord_fixed(ratio = sd_ratio)
     }
     # shape
-    if (!quo_is_null(enquo(shape))) {
-        if (!is.numeric(pull(p$data, !!enquo(shape))))
+    if (!rlang::quo_is_null(rlang::enquo(shape))) {
+        if (!is.numeric(pull(p$data, !!rlang::enquo(shape))))
             p %<>%  { . + 
                 scale_shape_manual(values = c(21:25, 0:14)[1:length(unique(pull(.$data, {{shape}})))])
             }
         else {
-            assertthat::assert_that(quo_is_null(enquo(fill)), msg = "Using fill together with shape for a continuous variable is not implememnted.")
+            assertthat::assert_that(rlang::quo_is_null(rlang::enquo(fill)), msg = "Using fill together with shape for a continuous variable is not implememnted.")
             warn("Warning: shape for a continuous variable must not be used together with fill.")
             p <- p + scale_shape_binned(solid = FALSE)
         }
@@ -539,30 +542,30 @@ plotPCAtargets2 <- function(expLog2, targets, shape = NULL, color = NULL, fill =
     else 
         p$layers[[1]]$aes_params$shape = 21
     # colors
-    if (!quo_is_null(enquo(color))) {
-        if (!is.numeric(pull(p$data, !!enquo(color))))
+    if (!rlang::quo_is_null(rlang::enquo(color))) {
+        if (!is.numeric(dplyr::pull(p$data, !!rlang::enquo(color))))
             p %<>% { . + 
-                scale_color_manual(values = defactorChr(getColPats2(.$data, colorsFrom=colorsFrom, unique=TRUE, pullVar={{color}})))
+                scale_color_manual(values = myHelpers::defactorChr(getColPats2(.$data, colorsFrom=colorsFrom, unique=TRUE, pullVar={{color}})))
             }
         else 
             warning("Cannot use discrete colors for continuous color variable")
         p <- p + guides(color = guide_legend(override.aes = list(alpha = 1, size = sizeUniform, shape=21)))
     }
     # fill
-    if (!quo_is_null(enquo(fill))) {
-        if (!is.numeric(pull(p$data, !!enquo(fill)))) 
+    if (!rlang::quo_is_null(rlang::enquo(fill))) {
+        if (!is.numeric(dplyr::pull(p$data, !!rlang::enquo(fill)))) 
             p %<>% { . + 
-                scale_fill_manual(values = defactorChr(getColPats2(.$data, colorsFrom=colorsFrom, unique=TRUE, pullVar={{fill}})))
+                scale_fill_manual(values = myHelpers::defactorChr(getColPats2(.$data, colorsFrom=colorsFrom, unique=TRUE, pullVar={{fill}})))
             }
         else 
             warning("Cannot use discrete colors for continuous fill variable")
         p <- p + guides(fill = guide_legend(override.aes = list(alpha = 1, size = sizeUniform, shape=21)))
     }
     # size
-    if (quo_is_null(enquo(size))) 
+    if (rlang::quo_is_null(rlang::enquo(size))) 
         p$layers[[1]]$aes_params$size = sizeUniform
     else  {
-        if (is.numeric(pull(p$data, !!enquo(size)))) 
+        if (is.numeric(dplyr::pull(p$data, !!rlang::enquo(size)))) 
             p <- p + scale_size(range = sizeRange)
         else  
             p <- p + scale_size_discrete(range = sizeRange)
