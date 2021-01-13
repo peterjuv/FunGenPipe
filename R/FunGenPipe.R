@@ -137,7 +137,8 @@ getColPats <- function(eset) {
 #' Names of colors may be:
 #' - preset (if rename = FALSE) or 
 #' - set from the associated column, e.g., from Var for color_Var
-#' - set from a common coulmn for all colors set by namesFrom parameter, e.g., namesFrom=HybName 
+#' - set from a common coulmn for all colors set by namesFrom parameter, e.g., namesFrom=HybName
+#' If names contain NAs, names are convert to character type and NAs are replaced with "<NA>"
 #' Minimum 2 columns are required, e.g. Var and color_Var
 #' 
 #' @param targets Table with columns names with a prefix colorsFrom='color_'
@@ -158,7 +159,7 @@ getColPats <- function(eset) {
 #'         If pullVar given, returns a single list of colors for that variable from targets 
 #' @examples
 #' \dontrun{
-#' (targets <- tibble(color_aa=c(1,1,2), color_bb=c("3"=3,"4"=4,"4"=4), aa=c(11,11,22), bb=c(33,33,44), cc=c(55,66,55)))
+#' (targets <- tibble::tibble(color_aa=c(1,1,2), color_bb=c("3"=3,"4"=4,"4"=4), aa=c(11,11,22), bb=c(33,33,44), cc=c(55,66,55)))
 #' names(targets$color_aa)
 #' names(targets$color_bb)
 #' getColPats2(targets)
@@ -174,8 +175,9 @@ getColPats <- function(eset) {
 #' getColPats2(targets, namesFrom=cc, unique=TRUE)
 #' # using preset names, and if missing, substiting from associated variables
 #' getColPats2(targets, rename=FALSE, namesFrom=NULL)
-#' # using preset names, and if missing, substiting from associated variables, not using namesFrom=cc, issueing a warning
-#' getColPats2(targets, rename=FALSE, namesFrom=cc)
+#' # names contain NA
+#' targets[2,"aa"]<-NA; getColPats2(targets, rename=TRUE)
+#' }
 #' }
 #' @importFrom magrittr %>% %<>%
 #' @importFrom assertthat assert_that are_equal has_name
@@ -203,7 +205,13 @@ getColPats2 <- function(targets, colorsFrom="color_", rename=TRUE, namesFrom=NUL
             cnames <- targets %>% dplyr::select(tidyselect::any_of(sub(colorsFrom, "", colnames(cols))))
         else
             cnames <- targets %>% dplyr::select(!!namesFrom)
-        cnames[is.na(cnames)] <- "<NA>"
+        # if names contain NAs, convert to character and replace NA with "<NA>"
+        if (any(is.na(cnames))) {
+            cnames <- cnames %>% 
+                purrr::map(as.character) %>% 
+                tibble::as_tibble()
+            cnames[is.na(cnames)] <- "<NA>"
+        }
         assertthat::assert_that(assertthat::are_equal(dim(cols)[[1]], dim(cnames)[[1]]) & 
             (dim(cnames)[[2]] %in% c(1,dim(cols)[[2]])),
             msg = paste("The number of colors and variables is not the same. Not all variables with a prefix", colorsFrom, "have an associated variable. Consider using namesFrom parameter."))

@@ -47,28 +47,7 @@ Names of colors may be:
 \item preset (if rename = FALSE) or
 \item set from the associated column, e.g., from Var for color_Var
 \item set from a common coulmn for all colors set by namesFrom parameter, e.g., namesFrom=HybName
+If names contain NAs, names are convert to character type and NAs are replaced with "<NA>"
 Minimum 2 columns are required, e.g. Var and color_Var
-}
-}
-\examples{
-\dontrun{
-(targets <- tibble(color_aa=c(1,1,2), color_bb=c("3"=3,"4"=4,"4"=4), aa=c(11,11,22), bb=c(33,33,44), cc=c(55,66,55)))
-names(targets$color_aa)
-names(targets$color_bb)
-getColPats2(targets)
-# using namesFrom
-getColPats2(targets, namesFrom=NULL)
-getColPats2(targets, namesFrom=cc)
-cc <- NULL
-getColPats2(targets, namesFrom=cc)
-d <- NULL
-getColPats2(targets, namesFrom=d)
-# using unique
-getColPats2(targets, unique=TRUE)
-getColPats2(targets, namesFrom=cc, unique=TRUE)
-# using preset names, and if missing, substiting from associated variables
-getColPats2(targets, rename=FALSE, namesFrom=NULL)
-# using preset names, and if missing, substiting from associated variables, not using namesFrom=cc, issueing a warning
-getColPats2(targets, rename=FALSE, namesFrom=cc)
 }
 }
