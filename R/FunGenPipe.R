@@ -200,13 +200,14 @@ getColPats2 <- function(targets, colorsFrom="color_", rename=TRUE, namesFrom=NUL
         dplyr::rename_with(~sub(colorsFrom, "", .))
     if (rename) {
         if (rlang::quo_is_null(namesFrom))
-            names <- targets %>% dplyr::select(tidyselect::any_of(sub(colorsFrom, "", colnames(cols))))
+            cnames <- targets %>% dplyr::select(tidyselect::any_of(sub(colorsFrom, "", colnames(cols))))
         else
-            names <- targets %>% dplyr::select(!!namesFrom)
-        assertthat::assert_that(assertthat::are_equal(dim(cols)[[1]], dim(names)[[1]]) & 
-            (dim(names)[[2]] %in% c(1,dim(cols)[[2]])),
+            cnames <- targets %>% dplyr::select(!!namesFrom)
+        cnames[is.na(cnames)] <- "<NA>"
+        assertthat::assert_that(assertthat::are_equal(dim(cols)[[1]], dim(cnames)[[1]]) & 
+            (dim(cnames)[[2]] %in% c(1,dim(cols)[[2]])),
             msg = paste("The number of colors and variables is not the same. Not all variables with a prefix", colorsFrom, "have an associated variable. Consider using namesFrom parameter."))
-        ncols <- purrr::map2(cols, names, setNames)
+        ncols <- purrr::map2(cols, cnames, setNames)
     } else {
         ncols <- as.list(cols)
         # add names (only if missing) from associated variables
