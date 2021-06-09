@@ -2,7 +2,7 @@
 % Please edit documentation in R/FunGenPipe.R
 \name{getColPats}
 \alias{getColPats}
-\title{Get color patterns with names from another column from ExpressionSet slot phenoData.}
+\title{Depricated: Get color patterns with names from another column from ExpressionSet slot phenoData.}
 \usage{
 getColPats(eset)
 }
@@ -14,11 +14,11 @@ List of colors, each of length equal to the number of rows in phenoData
 }
 \description{
 Returns columns from phenoData that start with "color_" and have their suffix in common with another column;
-Names of colors are set from the associated column, e.g., list(color_Sex = setNames(color_Sex, Sex), ...)
+Names of colors are set from the associated column, e.g., \code{list(color_Sex = setNames(color_Sex, Sex), ...)}
 }
 \section{Old implementation}{
 
-\dontrun{
+\code{
 getColPats <- function(eset) {
     require(assertthat)
     require(Biobase)
@@ -37,7 +37,7 @@ getColPats <- function(eset) {
 }
 
 \examples{
-/donotrun{
+\dontrun{
 getColPats(Biobase::pData(dataRaw/eset))
 getColPats(Biobase::pData(eset))
 }
