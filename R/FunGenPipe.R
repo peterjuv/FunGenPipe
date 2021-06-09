@@ -1,11 +1,18 @@
-#' @section Genomics
+#' Functional genomics functions and pipes
+#'
+#' Tools for building function genomics pipelines
+#' 
+#' @author Peter Juvan, \email{peter.juvan@gmail.com}
+#' @docType package
+#' 
+#' @section Genomics:
 #' Functions that operate with ranges and sequences
 #' dechiperMeltDNAtime
-#' @section Tagets meta-data
+#' @section Tagets meta-data:
 #' Functions for manipulating colors in targets.
 #' getColPats - depricated
 #' getColPats2
-#' @section Plot distributions, heatmap, PCA & MDS using targets meta-data
+#' @section Plot distributions, heatmap, PCA & MDS using targets meta-data:
 #' Note: the order od data columns should (always) be kept in the order of targets.
 #' plotDistrTargets2
 #' pheatmapTargets2
@@ -13,11 +20,21 @@
 #' plotPCAtargets - depricated
 #' plotMDStargets2
 #' plotMDStargets2_MASS - depricated
-#' @section Plot distributions using limma-style data
+#' @section Plot distributions using limma-style data:
 #' plotDistr_RGList
 #' boxplotRLE
-#' @section From Osijek_HFHSD
-#' For KBlag_doxy_Cla.R
+#' @section From KBlag_doxy_Cla.R For EKocar_fibIT.R:
+#' writeExprsGEO
+#' @section From Osijek_HFHSD For KBlag_doxy_Cla.R:
+#' esetAnnSEs
+#' getWriteHeatmap_probesTTcontrasts
+#' getWriteHeatmap_probesTTcomparisons
+#' getWriteHeatmap_PgseaTTcontrasts
+#' getWriteHeatmap_PgseaTTcomparisons
+#' annKeggEntrez
+#' gscKeggEntrez
+#' 
+#' @name FunGenPipe
 NULL
 
 ###################
@@ -83,19 +100,19 @@ dechiperMeltDNAtime <- function(myGRanges, myBSgenome, Trange=seq(50,100,1), ion
 #### Targets meta-data #####
 ############################
  
-#' Get color patterns with names from another column from ExpressionSet slot phenoData.
+#' Depricated: Get color patterns with names from another column from ExpressionSet slot phenoData.
 #' 
 #' Returns columns from phenoData that start with "color_" and have their suffix in common with another column;
-#' Names of colors are set from the associated column, e.g., list(color_Sex = setNames(color_Sex, Sex), ...)
+#' Names of colors are set from the associated column, e.g., \code{list(color_Sex = setNames(color_Sex, Sex), ...)}
 #' @param eset ExpressionSet
 #' @return List of colors, each of length equal to the number of rows in phenoData
 #' @examples
-#' /donotrun{
+#' \dontrun{
 #' getColPats(Biobase::pData(dataRaw/eset))
 #' getColPats(Biobase::pData(eset))
 #' }
 #' @section Old implementation:
-#' \dontrun{
+#' \code{
 #' getColPats <- function(eset) {
 #'     require(assertthat)
 #'     require(Biobase)
@@ -125,7 +142,7 @@ getColPats <- function(eset) {
     names <- Biobase::pData(eset) %>% 
         tibble::as_tibble() %>%
         select(all_of(sub("color_", "", colnames(cols))))
-    map2(cols, names, setNames)
+    purrr::map2(cols, names, setNames)
 }
 
 
@@ -138,7 +155,7 @@ getColPats <- function(eset) {
 #' - preset (if rename = FALSE) or 
 #' - set from the associated column, e.g., from Var for color_Var
 #' - set from a common coulmn for all colors set by namesFrom parameter, e.g., namesFrom=HybName
-#' If names contain NAs, names are convert to character type and NAs are replaced with "<NA>"
+#' If names contain NAs, names are convert to character type and NAs are replaced with "\<NA\>"
 #' Minimum 2 columns are required, e.g. Var and color_Var
 #' 
 #' @param targets Table with columns names with a prefix colorsFrom='color_'
@@ -178,12 +195,11 @@ getColPats <- function(eset) {
 #' # names contain NA
 #' targets[2,"aa"]<-NA; getColPats2(targets, rename=TRUE)
 #' }
-#' }
 #' @importFrom magrittr %>% %<>%
 #' @importFrom assertthat assert_that are_equal has_name
 #' @importFrom tibble as_tibble
 #' @importFrom rlang enquo quo_is_null quo_name
-#' @importFrom dplyr select rename_with
+#' @importFrom dplyr select rename_with pull
 #' @importFrom tidyselect starts_with any_of
 #' @importFrom purrr map2 map keep
 #' @export
@@ -222,7 +238,7 @@ getColPats2 <- function(targets, colorsFrom="color_", rename=TRUE, namesFrom=NUL
         for (nc in names(ncols)) if (is.null(names(ncols[[nc]]))) ncols[[nc]] <- setNames(ncols[[nc]], targets[[nc]])
     }
     if (!rlang::quo_is_null(pullVar)) {
-        ncol <- ncols %>% tibble::as_tibble() %>% pull(!!pullVar)
+        ncol <- ncols %>% tibble::as_tibble() %>% dplyr::pull(!!pullVar)
         if (unique)
             ncol <- ncol[!duplicated(names(ncol))]
         return(ncol)
@@ -537,9 +553,9 @@ plotPCAtargets2 <- function(expLog2, targets, shape = NULL, color = NULL, fill =
     }
     # shape
     if (!rlang::quo_is_null(rlang::enquo(shape))) {
-        if (!is.numeric(pull(p$data, !!rlang::enquo(shape))))
+        if (!is.numeric(dplyr::pull(p$data, !!rlang::enquo(shape))))
             p %<>%  { . + 
-                scale_shape_manual(values = c(21:25, 0:14)[1:length(unique(pull(.$data, {{shape}})))])
+                scale_shape_manual(values = c(21:25, 0:14)[1:length(unique(dplyr::pull(.$data, {{shape}})))])
             }
         else {
             assertthat::assert_that(rlang::quo_is_null(rlang::enquo(fill)), msg = "Using fill together with shape for a continuous variable is not implememnted.")
@@ -634,17 +650,17 @@ plotPCAtargets <- function(expLog2, targets, shape, color, fill, size,
         xlab(paste0("PC2, VarExp: ", percentVar[2], "%")) +
         theme(plot.title = element_text(hjust = 0.5))+
         coord_fixed(ratio = sd_ratio) +
-        scale_shape_manual(values = c(21:25, 0:14)[1:length(unique(pull(., !!shape)))]) +
+        scale_shape_manual(values = c(21:25, 0:14)[1:length(unique(dplyr::pull(., !!shape)))]) +
         guides(fill = guides_fill)
         # scale_size(range = c(2,5)) 
     }
     if (!quo_is_null(scale_color))
-        if (!is.numeric(pull(p$data, !!color)))
-            p %<>% { . + scale_color_manual(values = getColPats2(pull(.$data, !!scale_color), unique=TRUE))}
+        if (!is.numeric(dplyr::pull(p$data, !!color)))
+            p %<>% { . + scale_color_manual(values = getColPats2(dplyr::pull(.$data, !!scale_color), unique=TRUE))}
         else
             warning("Discrete scale_color supplied for continuous color variable; scale_color not used")
-    if (!quo_is_null(scale_fill))  p %<>% { . + scale_fill_manual(values = getColPats2(pull(.$data, !!scale_fill), unique=TRUE))}
-    #if (!quo_is_null(scale_fill))  p %<>% { . + scale_fill_manual(pull(.$data, !!scale_fill))}
+    if (!quo_is_null(scale_fill))  p %<>% { . + scale_fill_manual(values = getColPats2(dplyr::pull(.$data, !!scale_fill), unique=TRUE))}
+    #if (!quo_is_null(scale_fill))  p %<>% { . + scale_fill_manual(dplyr::pull(.$data, !!scale_fill))}
     ## PDF
     if (!is.null(filePath)) {
         pdf(filePath, width=width, height=height)
@@ -661,6 +677,8 @@ plotPCAtargets <- function(expLog2, targets, shape, color, fill, size,
 #' @param expLog2 Expression matrix (preferably in log2 scale) with genes in rows and samples in columns
 #' @param targets Phenotype data with columns with colors, e.g., color_Sex
 #' @param colorsFrom String variable prefix(es) from targets, passed to \code{getColPats2()}; default "color_"
+#' @param rename Logical, default TRUE, passed to \code{getColPats2()}; rename colors using associated variables 
+#'   or a variable namesFrom (default) 
 #' @param namesFrom Variable from targets, passed to \code{getColPats2()}; default NULL, alternative suggested HybName
 #' @inheritParams myHelpers::MDScols
 #' @param FUNS Character vector MDS functions, passed individually to \code{MDScols()}
@@ -930,6 +948,43 @@ boxplotRLE <- function(expLog2, filePath=NULL, RIN=NULL, width=7, height=7, alph
 }
 
 
+###############################
+#### From KBlag_doxy_Cla.R ####
+#### For EKocar_fibIT.R    ####
+###############################
+
+#' Write gene expression values for GEO
+#' 
+#' Downloads platform info file from GEO using GPL accession number \code{gplAccNum}.
+#' Adds platform IDs that are missing from ExpressionSet \code{esetAnn} and sets their values to NA.
+#' Writes data to tad-delimited file \code{filePath}.
+#' Uses \code{rownames(esetAnn)} as platform IDs. 
+#' @param esetAnn ExpressionSet
+#' @param gplAccNum Character GEO GPL accession number
+#' @param filePath Character path/fileName.txt
+#' @return Matrix expression values for GEO.
+#' @importFrom GEOquery getGEO
+#' @importFrom Biobase exprs
+#' @export
+writeExprsGEO <- function(esetAnn, gplAccNum, filePath=NULL) {
+    gplm <- GEOquery::getGEO(GEO=gplAccNum, destdir=dirname(filePath), getGPL=TRUE)
+    ## GEO: add transcriptClusterIDs to data¸ exported for GEO with NA values
+    idsAll <- gplm@dataTable@table$ID
+    idsNA <- setdiff(idsAll, rownames(esetAnn))
+    ## cbind.data.frame
+    dataNA <- cbind(as.matrix(idsNA), matrix(NA, nrow=length(idsNA), ncol=dim(esetAnn)[2]-1))
+    dataNA <- matrix(NA, nrow=length(idsNA), ncol=dim(esetAnn)[2])
+    colnames(dataNA) <- colnames(esetAnn)
+    rownames(dataNA) <- idsNA
+    ## Avoid rbind conversion from numeric to factor: use rbind.data.frame (not really needed, makes number of output digits inconsistent)
+    # dataAll <- rbind.data.frame(exprs(esetAnn), dataNA)
+    dataAll <- rbind(Biobase::exprs(esetAnn), dataNA)
+    ## write table
+    if (!is.null(filePath))
+        write.table(format(dataAll, digits=4), filePath, sep="\t", quote=FALSE, col.names=NA)
+    invisible(dataAll)
+}
+
 ##############################
 #### From Osijek_HFHSD.R #####
 #### For KBlag_doxy_Cla.R ####
@@ -940,7 +995,11 @@ boxplotRLE <- function(expLog2, filePath=NULL, RIN=NULL, width=7, height=7, alph
 #' Keep probes w/o annotations
 #' 
 #' @param eset ExpressionSet
+#' @param annDb AnnotationDbi object
 #' @return eset with collapsed annotations in slot annotations(eset)
+#' @importFrom AnnotationDbi select
+#' @importFrom Biobase featureNames fData
+#' @importFrom BiocGenerics annotation
 #' @export
 esetAnnSEs <- function(eset, annDb=clariomsmousetranscriptcluster.db) {
     require(annDb$packageName, character.only=TRUE)
@@ -964,26 +1023,42 @@ esetAnnSEs <- function(eset, annDb=clariomsmousetranscriptcluster.db) {
 }
 
 
-#' Write DE genes from contrasts & return DE genes
+#' Write DE genes from contrasts, return DE genes and plot heatmaps
 #' 
-#' @rdname getWriteHeatmap_probesTT
+#' File names correpond to names from fits dot(.) names from contrasts
 #' @param outPath Path to write TTs
 #' @param esets Named list of esets for BiocGenerics::annotation of probes with columns PROBEID, SYMBOL, ENTREZID, HSA_ENTREZID
 #' @param fits Named list of PGSEA fits
 #' @param contMatrices Named list of contrast matrices with Levels & Contrasts
-#' @returns Named list of \code{limma::topTable()} results (TTs) of DE genes; names corresponds to names of fits
+#' @param pVals Numeric vector p-values for heatmaps
+# @param varColSideColors Literal variable name from pData(esets[[.]]) (i.e. targets) with an associated "color_<varColSideColors>"
+#' @param varColSideColors String variable name from pData(esets[[.]]) (i.e. targets) with an associated "color_<varColSideColors>"
+#' @param targetsOrder Order of samples, used for plotting heatmaps w/o clustering of samples; default NA
+#' @param pValDE Numeric p-value for DEG, default 0.05
+#' @param maxHeatMapProbes Numeric max number of DEG for heatmaps, default 50
+#' @returns Named list of \code{limma::topTable()} results (TTs) of DE genes / enriched sets; names corresponds to names of fits
+#' @describeIn getWriteHeatmap Write DE genes from contrasts, return DE genes and plot heatmaps
 #' @export
-getWriteHeatmap_probesTTcontrasts <- function(outPath, esets, fits, contMatrices, pVals,
-                                              targetsOrder=NA, pValDE=0.05, maxHeatMapProbes=50) {
+getWriteHeatmap_probesTTcontrasts <- function(outPath, esets, fits, contMatrices, pVals, varColSideColors,
+                                              targetsOrder=NULL, pValDE=0.05, maxHeatMapProbes=50) {
     require(gplots)
     require(Biobase)
     require(limma)
+    # varColSideColors <- rlang::enquo(varColSideColors)
     if(!file.exists(outPath)) dir.create(outPath)
     annTT <- list()
     colPats <- list()
     for (fitName in names(fits)) {
-        colPats[[fitName]] <- getColPats(esets[[fitName]])
-        if (is.na(targetsOrder)) targetsOrder <- 1:dim(Biobase::pData(esets[[fitName]]))[[1]]
+        if (is.null(targetsOrder)) targetsOrder <- 1:dim(Biobase::pData(esets[[fitName]]))[[1]]
+        ## BAD depricated
+        # colPats[[fitName]] <- getColPats(esets[[fitName]])
+        ## NEW single var
+        # colPats[[fitName]] <- as.character(getColPats2(Biobase::pData(esets[[fitName]]), pullVar=!!varColSideColors))[targetsOrder]
+        colPats[[fitName]] <- as.character(getColPats2(Biobase::pData(esets[[fitName]]), pullVar=!!rlang::sym(varColSideColors)))[targetsOrder]
+        ## FUTURE list of vars
+        # colPats[[fitName]] <- getColPats2(Biobase::pData(esets[[fitName]])) %>% tibble::as.tibble() %>% dplyr::mutate_all(as.character) 
+        # if (!is.null(heatMapVars)) colPats[[fitName]] <- colPats[[fitName]] %>% dplyr::select(tidyselect::all_of(heatMapVars))
+        # colPats[[fitName]] <- colPats[[fitName]] %>% dplyr::arrange(targetsOrder) %>% as.list()
         ## WRITE DE genes for contrasts + draw HeatMaps
         for(contr in colnames(contMatrices[[fitName]])) {
             ## DE: write all genes
@@ -1009,10 +1084,10 @@ getWriteHeatmap_probesTTcontrasts <- function(outPath, esets, fits, contMatrices
                         if (heatMapWithMaxProbesDrawn) {pdfFileName <- paste(fitName, contr, "fdr", pVal, "top", maxHeatMapProbes, "pdf", sep=".")} else {pdfFileName <- paste(fitName, contr, "fdr", pVal, "pdf", sep=".")}
                             pdf(file.path(outPath, pdfFileName))
                             ## order samples $ colPats using dendrogram by setting constraints == weights / no reordering
-                            gplots::heatmap.2(Biobase::exprs(eSubSetAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]][targetsOrder], labRow=unlist(mget(Biobase::featureNames(eSubSetAdj), Biobase::fData(eSubSetAdj)$SYMBOLs)), margins=c(8,5), Colv=targetsOrder)
-                            gplots::heatmap.2(Biobase::exprs(eSubSetAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]][targetsOrder], labRow=unlist(mget(Biobase::featureNames(eSubSetAdj), Biobase::fData(eSubSetAdj)$SYMBOLs)), margins=c(8,5), Colv=NULL, dendrogram='row')
-                            heatmap(Biobase::exprs(eSubSetAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]][targetsOrder], labRow=unlist(mget(Biobase::featureNames(eSubSetAdj), Biobase::fData(eSubSetAdj)$SYMBOLs)), margins=c(8,5), Colv=targetsOrder)
-                            heatmap(Biobase::exprs(eSubSetAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]][targetsOrder], labRow=unlist(mget(Biobase::featureNames(eSubSetAdj), Biobase::fData(eSubSetAdj)$SYMBOLs)), margins=c(8,5), Colv=NA)
+                            gplots::heatmap.2(Biobase::exprs(eSubSetAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]], labRow=Biobase::fData(eSubSetAdj)$SYMBOLs, margins=c(8,5), Colv=targetsOrder)
+                            gplots::heatmap.2(Biobase::exprs(eSubSetAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]], labRow=Biobase::fData(eSubSetAdj)$SYMBOLs, margins=c(8,5), Colv=NULL, dendrogram='row')
+                            heatmap(Biobase::exprs(eSubSetAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]], labRow=Biobase::fData(eSubSetAdj)$SYMBOLs, margins=c(8,5), Colv=targetsOrder)
+                            heatmap(Biobase::exprs(eSubSetAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]], labRow=Biobase::fData(eSubSetAdj)$SYMBOLs, margins=c(8,5), Colv=NA)
                             dev.off()
                         } else print(paste("WARNING: no DE probes found. Fit", fitName, ", contr", contr, ", pVal", pVal))
                 } # end if heatMapWithMaxProbesDrawn
@@ -1024,13 +1099,11 @@ getWriteHeatmap_probesTTcontrasts <- function(outPath, esets, fits, contMatrices
 } #end function
         
 
-#' Write DE genes from comparisons & return DE genes
-#' 
-#' @rdname getWriteHeatmap_probesTT
 #' @param comparisons Named list of comparisons made from names of contrasts
+#' @describeIn getWriteHeatmap Write DE genes from comparisons, return DE genes and plot heatmaps
 #' @export
-getWriteHeatmap_probesTTcomparisons <- function(outPath, esets, fits, comparisons, pVals,
-                                                targetsOrder=NA, pValDE=0.05, maxHeatMapProbes=50) {
+getWriteHeatmap_probesTTcomparisons <- function(outPath, esets, fits, comparisons, pVals, varColSideColors,
+                                                targetsOrder=NULL, pValDE=0.05, maxHeatMapProbes=50) {
     require(gplots)
     require(Biobase)
     require(limma)
@@ -1038,8 +1111,8 @@ getWriteHeatmap_probesTTcomparisons <- function(outPath, esets, fits, comparison
     annTT <- list()
     colPats <- list()
     for (fitName in names(fits)) {
-        colPats[[fitName]] <- getColPats(esets[[fitName]])
-        if (is.na(targetsOrder)) targetsOrder <- 1:dim(Biobase::pData(esets[[fitName]]))[[1]]
+        if (is.null(targetsOrder)) targetsOrder <- 1:dim(Biobase::pData(esets[[fitName]]))[[1]]
+        colPats[[fitName]] <- as.character(getColPats2(Biobase::pData(esets[[fitName]]), pullVar=!!rlang::sym(varColSideColors)))[targetsOrder]
         ## WRITE DE genes for comparisons + draw HeatMaps
         for(compName in names(comparisons[[fitName]])) {
             ## make intersection of DE genes from contrasts within coefList
@@ -1074,10 +1147,10 @@ getWriteHeatmap_probesTTcomparisons <- function(outPath, esets, fits, comparison
                         if (heatMapWithMaxProbesDrawn) {pdfFileName <- paste(fitName, compName, "fdr", pVal, "top", maxHeatMapProbes, "pdf", sep=".")} else {pdfFileName <- paste(fitName, compName, "fdr", pVal, "pdf", sep=".")}
                         pdf(file.path(outPath, pdfFileName))
                         ## order samples $ colPats using dendrogram by setting constraints == weights / no reordering
-                        gplots::heatmap.2(Biobase::exprs(eSubSetAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]][targetsOrder], labRow=unlist(mget(Biobase::featureNames(eSubSetAdj), Biobase::fData(eSubSetAdj)$SYMBOLs)), margins=c(8,5), Colv=targetsOrder)
-                        gplots::heatmap.2(Biobase::exprs(eSubSetAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]][targetsOrder], labRow=unlist(mget(Biobase::featureNames(eSubSetAdj), Biobase::fData(eSubSetAdj)$SYMBOLs)), margins=c(8,5), Colv=NULL, dendrogram='row')
-                        heatmap(Biobase::exprs(eSubSetAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]][targetsOrder], labRow=unlist(mget(Biobase::featureNames(eSubSetAdj), Biobase::fData(eSubSetAdj)$SYMBOLs)), margins=c(8,5), Colv=targetsOrder)
-                        heatmap(Biobase::exprs(eSubSetAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]][targetsOrder], labRow=unlist(mget(Biobase::featureNames(eSubSetAdj), Biobase::fData(eSubSetAdj)$SYMBOLs)), margins=c(8,5), Colv=NA)
+                        gplots::heatmap.2(Biobase::exprs(eSubSetAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]], labRow=Biobase::fData(eSubSetAdj)$SYMBOLs, margins=c(8,5), Colv=targetsOrder)
+                        gplots::heatmap.2(Biobase::exprs(eSubSetAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]], labRow=Biobase::fData(eSubSetAdj)$SYMBOLs, margins=c(8,5), Colv=NULL, dendrogram='row')
+                        heatmap(Biobase::exprs(eSubSetAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]], labRow=Biobase::fData(eSubSetAdj)$SYMBOLs, margins=c(8,5), Colv=targetsOrder)
+                        heatmap(Biobase::exprs(eSubSetAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]], labRow=Biobase::fData(eSubSetAdj)$SYMBOLs, margins=c(8,5), Colv=NA)
                         dev.off()
                     } else print(paste("WARNING: no DE probes found. Fit", fitName, ", comparison", compName, ", pVal", pVal))
                 } # end heatMapWithMaxProbesDrawn
@@ -1090,19 +1163,13 @@ getWriteHeatmap_probesTTcomparisons <- function(outPath, esets, fits, comparison
 
 
 
-#' Write enriched pathways from contrasts & return patways
-#' 
-#' @rdname getWriteHeatmap_PgseaTT
-#' @param outPath Path to write TTS
 #' @param gscPGSEA Named list of gene set collection
 #' @param esetsPGSEA Named list of PGSEA esets
 #' @param fitsPGSEA Named list of PGSEA fits
-#' @param contMatrices Named list of contrast matrices with Levels & Contrasts
 #' @param setIDCol Add a column to TT with set IDs and name it setIDCol
 #' @param setName Name of the column from Biobase::fData(esetsPGSEA[[?]]) to show with heatmaps
 #' @param fitsProbes Named list of probe fits
 #' @param esetsProbes Named list of esets for BiocGenerics::annotation of probes with columns PROBEID, SYMBOL, ENTREZID, HSA_ENTREZID
-#' @returns Named list of \code{limma::topTable()} results (TTs) of enriched sets; names corresponds to names of fits
 #' @examples
 #' \dontrun{
 #' getWriteHeatmap_PgseaTTcontrasts(outPath=file.path(resultDirOut, "3.PGSEA.KEGGREST.limma-contrasts"), gscPGSEA=gscKeggrestHsa, esetsPGSEA=esetsKeggrest, fitsPGSEA=fitsKeggrest,
@@ -1110,9 +1177,10 @@ getWriteHeatmap_probesTTcomparisons <- function(outPath, esets, fits, comparison
 #' getWriteHeatmap_PgseaTTcontrasts(file.path(resultDirOut, "3.PGSEA.TRANSFAC.2016.1.byFA.limma-contrasts"), gscTF.facFA, esetsTF.facFA, fitsTF.facFA,
 #'                                          setIDCol="facFA", useNameCol="factorFA", fits, esets, pVals)
 #' }
+#' @describeIn getWriteHeatmap Write enriched pathways from contrasts, return patways and plot heatmaps
 #' @export
-getWriteHeatmap_PgseaTTcontrasts <- function(outPath, gscPGSEA, esetsPGSEA, fitsPGSEA, contMatrices, setIDCol, useNameCol,
-                                             fitsProbes, esetsProbes, pVals, targetsOrder=NA, pValDE=0.05, maxHeatMapProbes=50) {
+getWriteHeatmap_PgseaTTcontrasts <- function(outPath, gscPGSEA, esetsPGSEA, fitsPGSEA, contMatrices, setIDCol, useNameCol, fitsProbes, 
+                                             esetsProbes, pVals, varColSideColors, targetsOrder=NULL, pValDE=0.05, maxHeatMapProbes=50) {
     require(gplots)
     require(Biobase)
     require(limma)
@@ -1120,8 +1188,8 @@ getWriteHeatmap_PgseaTTcontrasts <- function(outPath, gscPGSEA, esetsPGSEA, fits
     annTT <- list()
     colPats <- list()
     for (fitName in names(fitsPGSEA)) {
-        colPats[[fitName]] <- getColPats(esetsPGSEA[[fitName]])
-        if (is.na(targetsOrder)) targetsOrder <- 1:dim(Biobase::pData(esetsProbes[[fitName]]))[[1]]
+        if (is.null(targetsOrder)) targetsOrder <- 1:dim(Biobase::pData(esetsProbes[[fitName]]))[[1]]
+        colPats[[fitName]] <- as.character(getColPats2(Biobase::pData(esetsPGSEA[[fitName]]), pullVar=!!rlang::sym(varColSideColors)))[targetsOrder]
         for(contr in colnames(contMatrices[[fitName]])) {
             ttContr <- limma::topTable(fitsPGSEA[[fitName]], coef=contr, number=999999)
             ## TODO: fix tables for TF, identical columns setIDCol & factorFA
@@ -1159,12 +1227,12 @@ getWriteHeatmap_PgseaTTcontrasts <- function(outPath, gscPGSEA, esetsPGSEA, fits
                     if (dim(esetSubAdj)[[1]] > 1) {
                         if (heatMapWithMaxProbesDrawn) {pdfFileName <- paste(fitName, contr, "fdr", pVal, "top", maxHeatMapProbes, "pdf", sep=".")} else {pdfFileName <- paste(fitName, contr, "fdr", pVal, "pdf", sep=".")}
                         pdf(file.path(outPath, pdfFileName))
-                        gplots::heatmap.2(Biobase::exprs(esetSubAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]][targetsOrder], labRow=Biobase::fData(esetSubAdj)[,useNameCol], margins=c(8,8), Colv=targetsOrder)
-                        gplots::heatmap.2(Biobase::exprs(esetSubAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]][targetsOrder], labRow=Biobase::fData(esetSubAdj)[,useNameCol], margins=c(8,8), Colv=NULL, dendrogram='row')
-                        heatmap(Biobase::exprs(esetSubAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]][targetsOrder], labRow=Biobase::fData(esetSubAdj)[,useNameCol], margins=c(8,8), Colv=targetsOrder)
-                        heatmap(Biobase::exprs(esetSubAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]][targetsOrder], labRow=Biobase::fData(esetSubAdj)[,useNameCol], margins=c(8,8), Colv=NA)
+                        gplots::heatmap.2(Biobase::exprs(esetSubAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]], labRow=Biobase::fData(esetSubAdj)[,useNameCol], margins=c(8,8), Colv=targetsOrder)
+                        gplots::heatmap.2(Biobase::exprs(esetSubAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]], labRow=Biobase::fData(esetSubAdj)[,useNameCol], margins=c(8,8), Colv=NULL, dendrogram='row')
+                        heatmap(Biobase::exprs(esetSubAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]], labRow=Biobase::fData(esetSubAdj)[,useNameCol], margins=c(8,8), Colv=targetsOrder)
+                        heatmap(Biobase::exprs(esetSubAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]], labRow=Biobase::fData(esetSubAdj)[,useNameCol], margins=c(8,8), Colv=NA)
                         dev.off()
-                    } else print(paste("WARNING: no DE sets found. Fit", fitName, ", contr", contr, ", pVal", pVal))
+                    } else print(paste("WARNING: no enriched sets found. Fit", fitName, ", contr", contr, ", pVal", pVal))
                 } # end heatMapWithMaxProbesDrawn
             } # end pVals
         } #end contr
@@ -1174,10 +1242,6 @@ getWriteHeatmap_PgseaTTcontrasts <- function(outPath, gscPGSEA, esetsPGSEA, fits
 } #end function
 
 
-#' Write enriched patways from comparisons & return patways
-#' 
-#' @rdname getWriteHeatmap_PgseaTT
-#' @param comparisons Named list of comparisons made from names of contrasts
 #' @examples
 #' \dontrun{
 #' writeHeatmap_PgseaTTcomparisons(outPath=file.path(resultDirOut, "3.PGSEA.KEGGREST.limma-comparisons"), gscPGSEA=gscKeggrestHsa, esetsPGSEA=esetsKeggrest, fitsPGSEA=fitsKeggrest,
@@ -1185,9 +1249,10 @@ getWriteHeatmap_PgseaTTcontrasts <- function(outPath, gscPGSEA, esetsPGSEA, fits
 #' writeHeatmap_PgseaTTcomparisons(file.path(resultDirOut, "3.PGSEA.TRANSFAC.2016.1.byFA.limma-comparisons"), gscTF.facFA, esetsTF.facFA, fitsTF.facFA,
 #'                           setIDCol="facFA", useNameCol="factorFA", fits, esets, pVals, targetsOrder)
 #' }
+#' @describeIn getWriteHeatmap Write enriched pathways from comparisons, return patways and plot heatmaps
 #' @export
-getWriteHeatmap_PgseaTTcomparisons <- function(outPath, gscPGSEA, esetsPGSEA, fitsPGSEA, comparisons, setIDCol, useNameCol,
-                                               fitsProbes, esetsProbes, pVals, targetsOrder=NA, pValDE=0.05, maxHeatMapProbes=50) {
+getWriteHeatmap_PgseaTTcomparisons <- function(outPath, gscPGSEA, esetsPGSEA, fitsPGSEA, comparisons, setIDCol, useNameCol, fitsProbes,
+                                               esetsProbes, pVals, varColSideColors, targetsOrder=NULL, pValDE=0.05, maxHeatMapProbes=50) {
     require(gplots)
     require(Biobase)
     require(limma)
@@ -1196,8 +1261,8 @@ getWriteHeatmap_PgseaTTcomparisons <- function(outPath, gscPGSEA, esetsPGSEA, fi
     annTT <- list()
     colPats <- list()
     for (fitName in names(fitsPGSEA)) {
-        colPats[[fitName]] <- getColPats(gscPGSEA[[fitName]])
-        if (is.na(targetsOrder)) targetsOrder <- 1:dim(Biobase::pData(esetsProbes[[fitName]]))[[1]]
+        if (is.null(targetsOrder)) targetsOrder <- 1:dim(Biobase::pData(esetsProbes[[fitName]]))[[1]]
+        colPats[[fitName]] <- as.character(getColPats2(Biobase::pData(esetsPGSEA[[fitName]]), pullVar=!!rlang::sym(varColSideColors)))[targetsOrder]
         for(compName in names(comparisons[[fitName]])) {
             ## make intersection of DE from contrasts within coefList
             coefList <- comparisons[[fitName]][[compName]]  # [[1]][1] "sM_F.id1_0"; $sM_F.id1234_0 [1] "sM_F.id1_0" "sM_F.id2_0" "sM_F.id3_0" "sM_F.id4_0"
@@ -1251,12 +1316,12 @@ getWriteHeatmap_PgseaTTcomparisons <- function(outPath, gscPGSEA, esetsPGSEA, fi
                     if (dim(esetSubAdj)[[1]] > 1) {
                         if (heatMapWithMaxProbesDrawn) {pdfFileName <- paste(fitName, compName, "fdr", pVal, "top", maxHeatMapProbes, "pdf", sep=".")} else {pdfFileName <- paste(fitName, compName, "fdr", pVal, "pdf", sep=".")}
                         pdf(file.path(outPath, pdfFileName))
-                        gplots::heatmap.2(Biobase::exprs(esetSubAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]][targetsOrder], labRow=Biobase::fData(esetSubAdj)[,useNameCol], margins=c(8,8), Colv=targetsOrder)
-                        gplots::heatmap.2(Biobase::exprs(esetSubAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]][targetsOrder], labRow=Biobase::fData(esetSubAdj)[,useNameCol], margins=c(8,8), Colv=NULL, dendrogram='row')
-                        heatmap(Biobase::exprs(esetSubAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]][targetsOrder], labRow=Biobase::fData(esetSubAdj)[,useNameCol], margins=c(8,8), Colv=targetsOrder)
-                        heatmap(Biobase::exprs(esetSubAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]][targetsOrder], labRow=Biobase::fData(esetSubAdj)[,useNameCol], margins=c(8,8), Colv=NA)
+                        gplots::heatmap.2(Biobase::exprs(esetSubAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]], labRow=Biobase::fData(esetSubAdj)[,useNameCol], margins=c(8,8), Colv=targetsOrder)
+                        gplots::heatmap.2(Biobase::exprs(esetSubAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]], labRow=Biobase::fData(esetSubAdj)[,useNameCol], margins=c(8,8), Colv=NULL, dendrogram='row')
+                        heatmap(Biobase::exprs(esetSubAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]], labRow=Biobase::fData(esetSubAdj)[,useNameCol], margins=c(8,8), Colv=targetsOrder)
+                        heatmap(Biobase::exprs(esetSubAdj), col=topo.colors(100), ColSideColors=colPats[[fitName]], labRow=Biobase::fData(esetSubAdj)[,useNameCol], margins=c(8,8), Colv=NA)
                         dev.off()
-                    } else print(paste("WARNING: no DE sets found. Fit", fitName, ", comparison", compName, ", pVal", pVal))
+                    } else print(paste("WARNING: no enriched sets found. Fit", fitName, ", comparison", compName, ", pVal", pVal))
                 } # end heatMapWithMaxProbesDrawn
             } # end pVals
         } #end compName
@@ -1269,10 +1334,12 @@ getWriteHeatmap_PgseaTTcomparisons <- function(outPath, gscPGSEA, esetsPGSEA, fi
 
 #' Get annotations for PGSEA from KEGGREST using ENTREZID.
 #' 
-# #' @return Data.frame with annotations and collapsed gene Symbols and ENTREZIDs
+#' @param organism Character organism abbreviation, default "mmu"
+#' @param annPackage Package name wiht annotations, default "org.Mm.eg.db"
+#' @return A data frame with annotations and collapsed gene Symbols and ENTREZIDs
+#' @importFrom KEGGREST keggLink keggList
 #' @export
 annKeggEntrez <- function(organism="mmu", annPackage="org.Mm.eg.db") {
-    require(KEGGREST)
     require(annPackage, character.only=TRUE)
     ## Get KEGG pathways for organism "org"
     keggPathOrg <- KEGGREST::keggLink("pathway", organism) # list (Named chr) org:Entrez_gene_ID -> pathway
@@ -1318,25 +1385,25 @@ annKeggEntrez <- function(organism="mmu", annPackage="org.Mm.eg.db") {
 #' @param keggPathOrgIDs TOWRITE
 #' @param design TOWRITE
 #' @return GeneSetCollection
+#' @importFrom KEGGREST keggLink
+#' @importFrom GSEABase GeneSetCollection GeneSet AnnotationIdentifier KEGGCollection
 #' @export
 gscKeggEntrez <- function(organism="mmu", annPrb, annKeggEntrez, keggPathOrgIDs, design) {
-    require(GSEABase)
-    require(KEGGREST)
     ## Get KEGG pathways for organism "org"
     keggPathOrg <- KEGGREST::keggLink("pathway", organism) # list (Named chr) org:Entrez_gene_ID -> pathway
     ## construct GeneSetCollection for a single design
     keggPathOrg2ProbeIDs <- list()
     gscKeggrestOrg <- list()
     for (dName in names(designs)) {
+        # list of lists of path:org04144: -> chr [1:231] "17214142" "17215576" "17218733"  ...
         keggPathOrg2ProbeIDs[[dName]] <- sapply(keggPathOrgIDs, function(pid) {
-                                           unique(annPrb[[dName]][annPrb[[dName]]$ENTREZID %in% sub(paste0(organism,":"), "", names(keggPathOrg[as.logical(keggPathOrg == pid)])), "PROBEID"])
-                                         }) # list of lists of path:org04144: -> chr [1:231] "17214142" "17215576" "17218733"  ...
+            unique(annPrb[[dName]][annPrb[[dName]]$ENTREZID %in% sub(paste0(organism,":"), "", names(keggPathOrg[as.logical(keggPathOrg == pid)])), "PROBEID"])})
         # remove "path:" in front of kegg path IDs
         names(keggPathOrg2ProbeIDs[[dName]]) <- sub("path:", "", names(keggPathOrg2ProbeIDs[[dName]]))
         ## construct GeneSetCollection
         gscKeggrestOrg[[dName]] <- GSEABase::GeneSetCollection(mapply(function(pIds, keggPathOrgId) {
-                                    GSEABase::GeneSet(pIds, geneIdType=GSEABase::AnnotationIdentifier(), collectionType=GSEABase::KEGGCollection(), setName=keggPathOrgId)
-                                    }, keggPathOrg2ProbeIDs[[dName]], names(keggPathOrg2ProbeIDs[[dName]])))
+            GSEABase::GeneSet(pIds, geneIdType=GSEABase::AnnotationIdentifier(), collectionType=GSEABase::KEGGCollection(), setName=keggPathOrgId)
+            }, keggPathOrg2ProbeIDs[[dName]], names(keggPathOrg2ProbeIDs[[dName]])))
     }
     ## return
     gscKeggrestOrg

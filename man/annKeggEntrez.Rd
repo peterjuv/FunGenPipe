@@ -6,6 +6,14 @@
 \usage{
 annKeggEntrez(organism = "mmu", annPackage = "org.Mm.eg.db")
 }
+\arguments{
+\item{organism}{Character organism abbreviation, default "mmu"}
+
+\item{annPackage}{Package name wiht annotations, default "org.Mm.eg.db"}
+}
+\value{
+A data frame with annotations and collapsed gene Symbols and ENTREZIDs
+}
 \description{
 Get annotations for PGSEA from KEGGREST using ENTREZID.
 }

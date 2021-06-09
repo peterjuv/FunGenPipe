@@ -54,6 +54,9 @@ plotMDStargets2_MASS(
 
 \item{colorsFrom}{String variable prefix(es) from targets, passed to \code{getColPats2()}; default "color_"}
 
+\item{rename}{Logical, default TRUE, passed to \code{getColPats2()}; rename colors using associated variables
+or a variable namesFrom (default)}
+
 \item{namesFrom}{Variable from targets, passed to \code{getColPats2()}; suggested HybName}
 
 \item{scale}{Logical scale data, passed to \code{MASS_MDScols()}}
