@@ -4,7 +4,7 @@
 \alias{gscKeggEntrez}
 \title{Create a list of GeneSetCollection for a list of designs and probe annotations using ENTREZID.}
 \usage{
-gscKeggEntrez(organism = "mmu", annPrb, annKeggEntrez, keggPathOrgIDs, design)
+gscKeggEntrez(organism = "mmu", annPrb, annKeggEntrez)
 }
 \arguments{
 \item{organism}{Character organism 3-letter code, e.g. "mmu" or "hsa"}
@@ -13,9 +13,7 @@ gscKeggEntrez(organism = "mmu", annPrb, annKeggEntrez, keggPathOrgIDs, design)
 
 \item{annKeggEntrez}{Data frame KEGG annotations}
 
-\item{keggPathOrgIDs}{TOWRITE}
-
-\item{design}{TOWRITE}
+\item{designs}{TOWRITE}
 }
 \value{
 GeneSetCollection
