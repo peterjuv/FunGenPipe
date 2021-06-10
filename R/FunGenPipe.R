@@ -996,7 +996,7 @@ writeExprsGEO <- function(esetAnn, gplAccNum, filePath=NULL) {
 #' 
 #' @param eset ExpressionSet
 #' @param annDb AnnotationDbi object
-#' @return eset with collapsed annotations in slot annotations(eset)
+#' @return ExpressionSet eset with collapsed annotations in slot annotations(eset)
 #' @importFrom AnnotationDbi select
 #' @importFrom Biobase featureNames fData
 #' @importFrom BiocGenerics annotation
@@ -1167,7 +1167,7 @@ getWriteHeatmap_probesTTcomparisons <- function(outPath, esets, fits, comparison
 #' @param esetsPGSEA Named list of PGSEA esets
 #' @param fitsPGSEA Named list of PGSEA fits
 #' @param setIDCol Add a column to TT with set IDs and name it setIDCol
-#' @param setName Name of the column from Biobase::fData(esetsPGSEA[[?]]) to show with heatmaps
+#' @param useNameCol Name of the column from Biobase::fData(esetsPGSEA[[?]]) to show with heatmaps
 #' @param fitsProbes Named list of probe fits
 #' @param esetsProbes Named list of esets for BiocGenerics::annotation of probes with columns PROBEID, SYMBOL, ENTREZID, HSA_ENTREZID
 #' @examples
@@ -1347,7 +1347,7 @@ annKeggEntrez <- function(organism="mmu", annPackage="org.Mm.eg.db") {
     ## Transform KEGG Entrez gene IDs (org:###...###)to probe IDs (##...##) and aggregate by KEGG path IDs (path:org##...##)
     ## additionally, Remove "org:" in front of KEGG Entrez IDs and "path:" in front of KEGG path IDs
     keggPathOrgIDs <- unique(keggPathOrg) # names of paths @ organism
-    keggPathOrg2EntrezIDs <- sapply(keggPathOrgIDs, function(pid) {sub(paste0(organism,":"), "", names(keggPathOrg[as.logical(keggPathOrg == pid)]))}) # list path:org04144: -> chr [1:231] "100017" "101056305" "103967" "105513" ...
+    keggPathOrg2EntrezIDs <- base::sapply(keggPathOrgIDs, function(pid) {sub(paste0(organism,":"), "", names(keggPathOrg[as.logical(keggPathOrg == pid)]))}) # list path:org04144: -> chr [1:231] "100017" "101056305" "103967" "105513" ...
     # remove "path:" in front of kegg path IDs
     names(keggPathOrg2EntrezIDs) <- sub("path:", "", names(keggPathOrg2EntrezIDs))
     
@@ -1365,13 +1365,13 @@ annKeggEntrez <- function(organism="mmu", annPackage="org.Mm.eg.db") {
     #annKeggrestOrg$"HSA_url" <- paste0("http://www.genome.jp/dbget-bin/www_bget?", sub(organism,"hsa",rownames(annKeggrestOrg)))
     
     ## add Entrez IDs and gene symbols
-    annKeggrestOrg$EntrezIDs <- sapply(keggPathOrg2EntrezIDs[rownames(annKeggrestOrg)], paste, collapse=";")
+    annKeggrestOrg$EntrezIDs <- base::sapply(keggPathOrg2EntrezIDs[rownames(annKeggrestOrg)], paste, collapse=";")
     ## old: environment approach
     annPckgLs <- ls(paste0("package:",annPackage))
     annPckgEnv <- get(annPckgLs[grep("SYMBOL$", annPckgLs)])
-    annKeggrestOrg$Symbols <- sapply(sapply(keggPathOrg2EntrezIDs[rownames(annKeggrestOrg)], function(entrezIDs) {unlist(mget(entrezIDs, annPckgEnv, ifnotfound=NA))}), paste, collapse=";")
+    annKeggrestOrg$Symbols <- base::sapply(base::sapply(keggPathOrg2EntrezIDs[rownames(annKeggrestOrg)], function(entrezIDs) {unlist(mget(entrezIDs, annPckgEnv, ifnotfound=NA))}), paste, collapse=";")
     ## new but slow: select() and/or mapIds()
-    #annKeggrestOrg$SYMBOLs <- sapply(sapply(keggPathOrg2EntrezIDs[rownames(annKeggrestOrg)], function(entrezIDs) {AnnotationDbi::mapIds(org.Mm.eg.db, keys=entrezIDs, column="SYMBOL", keytype="ENTREZID", multiVals=function(x) {paste0(x, collapse = ";")})}), paste, collapse=";")
+    #annKeggrestOrg$SYMBOLs <- base::sapply(base::sapply(keggPathOrg2EntrezIDs[rownames(annKeggrestOrg)], function(entrezIDs) {AnnotationDbi::mapIds(org.Mm.eg.db, keys=entrezIDs, column="SYMBOL", keytype="ENTREZID", multiVals=function(x) {paste0(x, collapse = ";")})}), paste, collapse=";")
 
     ## return
     annKeggrestOrg
@@ -1382,29 +1382,24 @@ annKeggEntrez <- function(organism="mmu", annPackage="org.Mm.eg.db") {
 #' @param organism Character organism 3-letter code, e.g. "mmu" or "hsa"
 #' @param annPrb Data frame probe annotations
 #' @param annKeggEntrez Data frame KEGG annotations
-#' @param keggPathOrgIDs TOWRITE
-#' @param design TOWRITE
+#' @param designs TOWRITE
 #' @return GeneSetCollection
 #' @importFrom KEGGREST keggLink
 #' @importFrom GSEABase GeneSetCollection GeneSet AnnotationIdentifier KEGGCollection
 #' @export
-gscKeggEntrez <- function(organism="mmu", annPrb, annKeggEntrez, keggPathOrgIDs, design) {
+gscKeggEntrez <- function(organism="mmu", annPrb, annKeggEntrez) {
     ## Get KEGG pathways for organism "org"
     keggPathOrg <- KEGGREST::keggLink("pathway", organism) # list (Named chr) org:Entrez_gene_ID -> pathway
-    ## construct GeneSetCollection for a single design
-    keggPathOrg2ProbeIDs <- list()
-    gscKeggrestOrg <- list()
-    for (dName in names(designs)) {
-        # list of lists of path:org04144: -> chr [1:231] "17214142" "17215576" "17218733"  ...
-        keggPathOrg2ProbeIDs[[dName]] <- sapply(keggPathOrgIDs, function(pid) {
-            unique(annPrb[[dName]][annPrb[[dName]]$ENTREZID %in% sub(paste0(organism,":"), "", names(keggPathOrg[as.logical(keggPathOrg == pid)])), "PROBEID"])})
-        # remove "path:" in front of kegg path IDs
-        names(keggPathOrg2ProbeIDs[[dName]]) <- sub("path:", "", names(keggPathOrg2ProbeIDs[[dName]]))
-        ## construct GeneSetCollection
-        gscKeggrestOrg[[dName]] <- GSEABase::GeneSetCollection(mapply(function(pIds, keggPathOrgId) {
-            GSEABase::GeneSet(pIds, geneIdType=GSEABase::AnnotationIdentifier(), collectionType=GSEABase::KEGGCollection(), setName=keggPathOrgId)
-            }, keggPathOrg2ProbeIDs[[dName]], names(keggPathOrg2ProbeIDs[[dName]])))
-    }
+    ## construct GeneSetCollection
+    # list of lists of path:org04144: -> chr [1:231] "17214142" "17215576" "17218733"  ...
+    keggPathOrg2ProbeIDs <- sapply(unique(keggPathOrg), function(pid) {
+        unique(annPrb[annPrb$ENTREZID %in% sub(paste0(organism,":"), "", names(keggPathOrg[as.logical(keggPathOrg == pid)])), "PROBEID"])})
+    # remove "path:" in front of kegg path IDs
+    names(keggPathOrg2ProbeIDs) <- sub("path:", "", names(keggPathOrg2ProbeIDs))
+    ## construct GeneSetCollection
+    gscKeggrestOrg <- GSEABase::GeneSetCollection(mapply(function(pIds, keggPathOrgId) {
+        GSEABase::GeneSet(pIds, geneIdType=GSEABase::AnnotationIdentifier(), collectionType=GSEABase::KEGGCollection(), setName=keggPathOrgId)
+        }, keggPathOrg2ProbeIDs, names(keggPathOrg2ProbeIDs)))
     ## return
     gscKeggrestOrg
 }

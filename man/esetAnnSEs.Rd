@@ -12,7 +12,7 @@ esetAnnSEs(eset, annDb = clariomsmousetranscriptcluster.db)
 \item{annDb}{AnnotationDbi object}
 }
 \value{
-eset with collapsed annotations in slot annotations(eset)
+ExpressionSet eset with collapsed annotations in slot annotations(eset)
 }
 \description{
 Keep probes w/o annotations

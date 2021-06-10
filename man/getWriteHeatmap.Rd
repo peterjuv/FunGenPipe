@@ -94,11 +94,11 @@ getWriteHeatmap_PgseaTTcomparisons(
 
 \item{setIDCol}{Add a column to TT with set IDs and name it setIDCol}
 
+\item{useNameCol}{Name of the column from Biobase::fData(esetsPGSEA[\link{?}]) to show with heatmaps}
+
 \item{fitsProbes}{Named list of probe fits}
 
 \item{esetsProbes}{Named list of esets for BiocGenerics::annotation of probes with columns PROBEID, SYMBOL, ENTREZID, HSA_ENTREZID}
-
-\item{setName}{Name of the column from Biobase::fData(esetsPGSEA[\link{?}]) to show with heatmaps}
 }
 \value{
 Named list of \code{limma::topTable()} results (TTs) of DE genes / enriched sets; names corresponds to names of fits
