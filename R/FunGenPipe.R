@@ -953,21 +953,23 @@ boxplotRLE <- function(expLog2, filePath=NULL, RIN=NULL, width=7, height=7, alph
 #### For EKocar_fibIT.R    ####
 ###############################
 
-#' Write gene expression values for GEO
+#' Return and write gene expression values for GEO
 #' 
 #' Downloads platform info file from GEO using GPL accession number \code{gplAccNum}.
 #' Adds platform IDs that are missing from ExpressionSet \code{esetAnn} and sets their values to NA.
-#' Writes data to tad-delimited file \code{filePath}.
-#' Uses \code{rownames(esetAnn)} as platform IDs. 
+#' Writes data to tad-delimited file \code{filePath} if specified.
+#' Uses \code{rownames(esetAnn)} as IDs. 
 #' @param esetAnn ExpressionSet
 #' @param gplAccNum Character GEO GPL accession number
-#' @param filePath Character path/fileName.txt
+#' @param filePath Character path/fileName.txt; default NULL
+#' @param remGPL Delete the downloaded GPL*.soft file; default TRUE
+#' @param ... Further arguments passed to GEOquery::getGEO(...)
 #' @return Matrix expression values for GEO.
 #' @importFrom GEOquery getGEO
 #' @importFrom Biobase exprs
 #' @export
-writeExprsGEO <- function(esetAnn, gplAccNum, filePath=NULL) {
-    gplm <- GEOquery::getGEO(GEO=gplAccNum, destdir=dirname(filePath), getGPL=TRUE)
+writeExprsGEO <- function(esetAnn, gplAccNum, filePath=NULL, remGPL=TRUE, ...) {
+    gplm <- GEOquery::getGEO(GEO=gplAccNum, destdir=dirname(filePath), getGPL=getGPL, ...)
     ## GEO: add transcriptClusterIDs to data¸ exported for GEO with NA values
     idsAll <- gplm@dataTable@table$ID
     idsNA <- setdiff(idsAll, rownames(esetAnn))
@@ -982,6 +984,7 @@ writeExprsGEO <- function(esetAnn, gplAccNum, filePath=NULL) {
     ## write table
     if (!is.null(filePath))
         write.table(format(dataAll, digits=4), filePath, sep="\t", quote=FALSE, col.names=NA)
+    if (remGPL) file.remove(file.path(dirname(filePath), paste(gplAccNum,"soft", sep=".")))
     invisible(dataAll)
 }
 
