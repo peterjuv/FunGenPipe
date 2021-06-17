@@ -37,7 +37,6 @@ getWriteHeatmap_PgseaTTcontrasts(
   esetsPGSEA,
   fitsPGSEA,
   contMatrices,
-  setIDCol,
   useNameCol,
   fitsProbes,
   esetsProbes,
@@ -45,7 +44,8 @@ getWriteHeatmap_PgseaTTcontrasts(
   varColSideColors,
   targetsOrder = NULL,
   pValDE = 0.05,
-  maxHeatMapProbes = 50
+  maxHeatMapProbes = 50,
+  setIDCol = NULL
 )
 
 getWriteHeatmap_PgseaTTcomparisons(
@@ -54,7 +54,6 @@ getWriteHeatmap_PgseaTTcomparisons(
   esetsPGSEA,
   fitsPGSEA,
   comparisons,
-  setIDCol,
   useNameCol,
   fitsProbes,
   esetsProbes,
@@ -62,7 +61,8 @@ getWriteHeatmap_PgseaTTcomparisons(
   varColSideColors,
   targetsOrder = NULL,
   pValDE = 0.05,
-  maxHeatMapProbes = 50
+  maxHeatMapProbes = 50,
+  setIDCol = NULL
 )
 }
 \arguments{
@@ -92,13 +92,13 @@ getWriteHeatmap_PgseaTTcomparisons(
 
 \item{fitsPGSEA}{Named list of PGSEA fits}
 
-\item{setIDCol}{Add a column to TT with set IDs and name it setIDCol}
-
 \item{useNameCol}{Name of the column from Biobase::fData(esetsPGSEA[\link{?}]) to show with heatmaps}
 
 \item{fitsProbes}{Named list of probe fits}
 
 \item{esetsProbes}{Named list of esets for BiocGenerics::annotation of probes with columns PROBEID, SYMBOL, ENTREZID, HSA_ENTREZID}
+
+\item{setIDCol}{Character column name with rownames (i.e. IDs of gene sets) added to limma::topTable; default NULL}
 }
 \value{
 Named list of \code{limma::topTable()} results (TTs) of DE genes / enriched sets; names corresponds to names of fits
@@ -119,15 +119,14 @@ File names correpond to names from fits dot(.) names from contrasts
 
 \examples{
 \dontrun{
-getWriteHeatmap_PgseaTTcontrasts(outPath=file.path(resultDirOut, "3.PGSEA.KEGGREST.limma-contrasts"), gscPGSEA=gscKeggrestHsa, esetsPGSEA=esetsKeggrest, fitsPGSEA=fitsKeggrest,
-                                     setIDCol="KeggID", useNameCol="keggPathNameHsa2", fitsProbes=fits, esetsProbes=esets, pVals)
-getWriteHeatmap_PgseaTTcontrasts(file.path(resultDirOut, "3.PGSEA.TRANSFAC.2016.1.byFA.limma-contrasts"), gscTF.facFA, esetsTF.facFA, fitsTF.facFA,
-                                         setIDCol="facFA", useNameCol="factorFA", fits, esets, pVals)
+getWriteHeatmap_PgseaTTcontrasts(outPath=file.path(resultDirOut, "3.PGSEA.KEGGREST.limma-contrasts"), gscPGSEA=gscKeggrestHsa, 
+  esetsPGSEA=esetsKeggrest, fitsPGSEA=fitsKeggrest, useNameCol="keggPathNameHsa2", fitsProbes=fits, esetsProbes=esets, pVals)
+getWriteHeatmap_PgseaTTcontrasts(file.path(resultDirOut, "3.PGSEA.TRANSFAC.2016.1.byFA.limma-contrasts"), gscTF.facFA, 
+  esetsTF.facFA, fitsTF.facFA, useNameCol="factorFA", fits, esets, pVals)
 }
 \dontrun{
-writeHeatmap_PgseaTTcomparisons(outPath=file.path(resultDirOut, "3.PGSEA.KEGGREST.limma-comparisons"), gscPGSEA=gscKeggrestHsa, esetsPGSEA=esetsKeggrest, fitsPGSEA=fitsKeggrest,
-                          setIDCol="KeggID", useNameCol="keggPathNameHsa2", fitsProbes=fits, esetsProbes=esets, pVals, targetsOrder)
-writeHeatmap_PgseaTTcomparisons(file.path(resultDirOut, "3.PGSEA.TRANSFAC.2016.1.byFA.limma-comparisons"), gscTF.facFA, esetsTF.facFA, fitsTF.facFA,
-                          setIDCol="facFA", useNameCol="factorFA", fits, esets, pVals, targetsOrder)
+writeHeatmap_PgseaTTcomparisons(outPath=file.path(resultDirOut, "3.PGSEA.KEGGREST.limma-comparisons"), gscPGSEA=gscKeggrestHsa,
+  esetsPGSEA=esetsKeggrest, fitsPGSEA=fitsKeggrest, comparisons=comparisons, useNameCol="keggPathNameHsa2", fitsProbes=fits, 
+  esetsProbes=esets, pVals=pVals, varColSideColors="SexFs", targetsOrder=targetsOrder, setIDCol="KeggID")
 }
 }

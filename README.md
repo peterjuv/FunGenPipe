@@ -32,8 +32,6 @@ This is a basic example which shows you how to solve a common problem:
 
 ``` r
 library(FunGenPipe)
-#> Warning: replacing previous import 'dplyr::select' by 'AnnotationDbi::select'
-#> when loading 'FunGenPipe'
 #> Setting options('download.file.method.GEOquery'='auto')
 #> Setting options('GEOquery.inmemory.gpl'=FALSE)
 #> Warning: replacing previous import 'AnnotationDbi::select' by 'dplyr::select'

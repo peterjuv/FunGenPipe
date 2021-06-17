@@ -8,7 +8,7 @@ plotDistr_RGList(
   RGList,
   filePath = NULL,
   channels = c("R", "G"),
-  FUNS = c(geom_density, geom_boxplot),
+  FUNS = c(ggplot2::geom_density, ggplot2::geom_boxplot),
   probeTypeVec = NULL,
   probeTypeValue = 0,
   numProbes = NULL,

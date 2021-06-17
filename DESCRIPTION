@@ -10,11 +10,14 @@ Authors@R:
 Description: Tools for building function genomics pipelines.
 License: MIT + file LICENSE
 Suggests:
+    DECIPHER,
     testthat,
     covr
 Encoding: UTF-8
 LazyData: true
-Imports: 
+Imports:
+    methods,
+    stats,
     dplyr,
     tidyr,
     tibble,
@@ -40,8 +43,8 @@ Imports:
     forcats,
 	tidyselect,
 	vctrs,
-    DECIPHER,
-    myHelpers
+    myHelpers,
+    S4Vectors
 Remotes:
     github::peterjuv/myHelpers
 Roxygen: list(markdown = TRUE)

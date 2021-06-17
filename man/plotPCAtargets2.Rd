@@ -91,6 +91,10 @@ Colors and fill of points is collected from targets using variable names with a 
 Continuous variables may be used; colors from targets are nor used thus.
 Shape for a continuous variable must not be used together with fill.
 }
+\details{
+Note: use (.) for using data multiple times and/or as a non-first argument;
+using y \%>\% {f(x, .) + g(.)} is equivalent to f(x,y) + g(y); {} may be left out
+}
 \section{TODO}{
 
 FIX: add guides_*

@@ -53,7 +53,8 @@ Minimum 2 columns are required, e.g. Var and color_Var
 }
 \examples{
 \dontrun{
-(targets <- tibble::tibble(color_aa=c(1,1,2), color_bb=c("3"=3,"4"=4,"4"=4), aa=c(11,11,22), bb=c(33,33,44), cc=c(55,66,55)))
+(targets <- tibble::tibble(color_aa=c(1,1,2), color_bb=c("3"=3,"4"=4,"4"=4), 
+  aa=c(11,11,22), bb=c(33,33,44), cc=c(55,66,55)))
 names(targets$color_aa)
 names(targets$color_bb)
 getColPats2(targets)

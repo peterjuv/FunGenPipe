@@ -7,9 +7,8 @@
 \description{
 Tools for building function genomics pipelines
 }
-\section{Genomics}{
+\section{Genomics functions that operate with ranges and sequences}{
 
-Functions that operate with ranges and sequences
 dechiperMeltDNAtime
 }
 
@@ -37,20 +36,27 @@ plotDistr_RGList
 boxplotRLE
 }
 
-\section{From KBlag_doxy_Cla.R For EKocar_fibIT.R}{
-
+\section{DEG}{
+ annotations, expression (from KBlag_doxy_Cla.R via Osijek_HFHSD.R for EKocar_fibIT.R)
+annotate_SEcollapsed
 writeExprsGEO
 }
 
-\section{From Osijek_HFHSD For KBlag_doxy_Cla.R}{
-
-esetAnnSEs
+\section{DEG & GSEA}{
+ write (finalized for EKocar_fibIT.R))
 getWriteHeatmap_probesTTcontrasts
 getWriteHeatmap_probesTTcomparisons
 getWriteHeatmap_PgseaTTcontrasts
 getWriteHeatmap_PgseaTTcomparisons
-annKeggEntrez
+}
+
+\section{GSEA}{
+ annotations & analysis
+getAnnKeggEntrez
 gscKeggEntrez
+annTFbyFA - depricated, replaced by getAnnTransfac
+getAnnTransfacEntrez
+gscTransfacEntrez
 }
 
 \author{

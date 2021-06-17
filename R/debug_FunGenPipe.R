@@ -1,3 +1,124 @@
+if (FALSE) {
+    #### annTFbyFA
+    ## 2020-05-17_12-25-28_fac2drDF_osHXentrez.RData
+    envTrasfac <- new.env()
+    load("~/CFGBC/transfac/2020.2/2020-05-17_12-25-28_fac2drDF_osHXentrez.RData", envir=envTrasfac)
+    ls(envTrasfac)
+    fac2drDF <- get("fac2drDF_osHXentrez", envir=envTrasfac)
+    get("fac2drDF_osHXentrez", envir=envTrasfac)
+    get(ls(envTrasfac), envir=envTrasfac)
+    get(ls(envTrasfac), envir=envTrasfac)
+    eset <- esets[[1]]
+    stringr::str_subset(unique(fac2drDF_entrez$factor.FA), "(miR)|(isoform)", negate=FALSE) %>% tibble::as_tibble() %>% print(n=200) %>% tibble::deframe()
+    stringr::str_subset(unique(fac2drDF_entrez$factor.FA), "(miR)|(isoform)", negate=TRUE) %>% tibble::as_tibble() %>% print(n=200) %>% tibble::deframe()
+    stringr::str_subset(unique(fac2drDF_entrez$factor.FA), "miR[^-]", negate=FALSE) %>% tibble::as_tibble() %>% print(n=200) %>% tibble::deframe()
+    stringr::str_subset(unique(fac2drDF_entrez$factor.FA), "-miR-", negate=FALSE) %>% tibble::as_tibble() %>% print(n=200) %>% tibble::deframe()
+    stringr::str_subset(unique(fac2drDF_entrez$factor.FA), "[^(hsa)]-miR", negate=FALSE) %>% tibble::as_tibble() %>% print(n=200) %>% tibble::deframe()
+    stringr::str_subset(unique(fac2drDF_entrez$factor.FA), NULL, negate=FALSE) %>% tibble::as_tibble() %>% print(n=200) %>% tibble::deframe()
+    tail(stringr::str_which(fac2drDF_entrez$factor.FA, "[^(hsa)]-miR", negate=FALSE))
+    length(stringr::str_which(fac2drDF_entrez$factor.FA, "[^(hsa)]-miR", negate=FALSE))
+    fac2drDF_entrez$factor.FA[stringr::str_which(fac2drDF_entrez$factor.FA, "[^(hsa)]-miR", negate=FALSE)]
+    ##
+    length(as.character(sort(unique(fac2drDF$factor.FA))))
+    length(as.character(sort(unique(fac2drDF_entrez_sym$factor.FA))))
+    ##
+    Biobase::fData(eset)$ENTREZIDs %>% stringr::str_subset(";") %>% stringr::str_split(";") %>% unlist()
+    ##
+    aaa <- annTFbyFA(get("fac2drDF_osHXentrez", envir=envTrasfac), esets[[1]], "[^(hsa)]-miR")
+
+    #### getAnnTransfacEntrez
+    colnames(fac2drDF)
+    by="factor.FA"
+    patternExcludeFactor="[^(hsa)]-miR"
+    bbbu <- getAnnTransfacEntrez(get("fac2drDF_osHXentrez", envir=envTrasfac), by="factor.FA", esets[[1]], "[^(hsa)]-miR", TRUE)
+    cccu <- getAnnTransfacEntrez(get("fac2drDF_osHXentrez", envir=envTrasfac), by="factor.AC", esets[[1]], "[^(hsa)]-miR", TRUE)
+    bbb <- getAnnTransfacEntrez(get("fac2drDF_osHXentrez", envir=envTrasfac), by="factor.FA", esets[[1]], "[^(hsa)]-miR", FALSE)
+    ccc <- getAnnTransfacEntrez(get("fac2drDF_osHXentrez", envir=envTrasfac), by="factor.AC", esets[[1]], "[^(hsa)]-miR", FALSE)
+    bbb %>% dplyr::arrange(factorACs) %>% head(n=4)
+    head(ccc, n=4)
+
+    ### gscKeggEntrez
+    annPrb <- fData(esets[[1]])
+    annPrbENTREZID <- annPrb$ENTREZIDs %>% stringr::str_split(";") %>% unlist()
+    annPrbM <- annPrb[annPrb$ENTREZIDs %>% stringr::str_detect(";"), ] %>% 
+    pid <- "path:hsa00010"
+    eids <- sub(paste0(organism,":"), "", names(keggPathOrg[as.logical(keggPathOrg == pid)]))
+    sum(annPrbENTREZID %in% eids)
+    sum(annPrb$ENTREZID %in% eids)
+    sort(unique(annPrb[annPrb$ENTREZID %in% sub(paste0(organism,":"), "", names(keggPathOrg[as.logical(keggPathOrg == pid)])), "PROBEID"]))
+    sort(unique(annPrb[annPrbENTREZID %in% sub(paste0(organism,":"), "", names(keggPathOrg[as.logical(keggPathOrg == pid)])), "PROBEID"]))
+    ##
+    annPrbM %>% as_tibble
+    annPrbM %>% tidyr::separate_rows(ENTREZIDs, sep=";")
+    ##
+    keggPathOrg2ProbeIDs_old <- sapply(unique(keggPathOrg), function(pid) {
+        unique(annPrb[annPrb$ENTREZID %in% sub(paste0(organism,":"), "", names(keggPathOrg[as.logical(keggPathOrg == pid)])), "PROBEID"])
+    })
+    keggPathOrg2ProbeIDs_bad <- sapply(unique(keggPathOrg), function(pid) {
+        unique(annPrb[annPrbENTREZID %in% sub(paste0(organism,":"), "", names(keggPathOrg[as.logical(keggPathOrg == pid)])), "PROBEID"])
+    })
+    keggPathOrg2ProbeIDs <- sapply(unique(keggPathOrg), function(pid) {
+        unique(annPrbSep %>% 
+            dplyr::filter(ENTREZIDs %in% sub(paste0(organism,":"), "", names(keggPathOrg[as.logical(keggPathOrg == pid)]))) %>% 
+            purrr::pluck("PROBEID")
+        )
+    })
+    keo<-sapply(keggPathOrg2ProbeIDs_old, length)
+    keb<-sapply(keggPathOrg2ProbeIDs_bad, length)
+    ken<-sapply(keggPathOrg2ProbeIDs, length)
+    sum(keo)
+    sum(keb)
+    sum(ken)
+    keo
+    ken
+    keggPathOrg2ProbeIDs_old$`path:hsa00030`
+    keggPathOrg2ProbeIDs$`path:hsa00030`
+    setdiff(keggPathOrg2ProbeIDs$`path:hsa00030`,keggPathOrg2ProbeIDs_old$`path:hsa00030`)
+    annPrb["TC0200012098.hg.1",]
+    keggPathOrg[keggPathOrg == "path:hsa00030"]
+    keggPathOrg[names(keggPathOrg) == "hsa:100302650"]
+    keggPathOrg[names(keggPathOrg) == "hsa:64080"]
+    ##
+    length(keggPathOrg[keggPathOrg == "path:hsa04971"])
+
+    ## gscTransfacEntrez
+    rownames(bbb)
+    rownames(ccc)
+    fac2drDF
+    annTransfac <- getAnnTransfacEntrez(get("fac2drDF_osHXentrez", envir=envTrasfac), by="factor.FA", esets[[1]], "[^(hsa)]-miR", FALSE)
+    head(annTransfac)
+    rownames(annTransfac)
+    head(annPrb)
+    ##
+    idName="PROBEID"
+    by="factor.FA"
+    facIDs <- rownames(annTransfac)
+    fac2ProbeIDs_old <- base::sapply(facIDs, FUN=function(tffa) {
+        unique(annPrbSep[annPrbSep$ENTREZID %in% fac2drDF[fac2drDF[[by]]==tffa, "gene.DRac2"], idName])
+    }) # list of lists of 1825 `(c-Jun)2` -> "17231461" "17257444" "17305034" "17353699" "17406586" "17427312" "17453819" "17463718"
+    fac2ProbeIDs <- base::sapply(facIDs, FUN=function(tffa) {
+        unique(annPrbSep %>% 
+            dplyr::filter(ENTREZID %in% fac2drDF[fac2drDF[[by]]==tffa, "gene.DRac2"]) %>% 
+            purrr::pluck(idName)
+        )
+    }) # list of lists of 1825 `(c-Jun)2` -> "17231461" "17257444" "17305034" "17353699" "17406586" "17427312" "17453819" "17463718"
+    names(fac2ProbeIDs_old)
+    names(fac2ProbeIDs)
+    length(fac2ProbeIDs_old)
+    length(fac2ProbeIDs)
+    fac2ProbeIDs_old[[1]]
+    fac2ProbeIDs[[1]]
+    ##
+    annTransfacFA_noEset <- getAnnTransfacEntrez(get("fac2drDF_osHXentrez", envir=envTrasfac), by="factor.FA", NULL, "[^(hsa)]-miR", FALSE)
+    annTransfacFA <- getAnnTransfacEntrez(get("fac2drDF_osHXentrez", envir=envTrasfac), by="factor.FA", esets[[1]], "[^(hsa)]-miR", FALSE)
+    gscTransfacFA <- gscTransfacEntrez(annPrb, idName="PROBEID", fac2drDF, by="factor.FA", annTransfac=annTransfacFA)
+    annTransfacAC <- getAnnTransfacEntrez(get("fac2drDF_osHXentrez", envir=envTrasfac), by="factor.AC", esets[[1]], "[^(hsa)]-miR", FALSE)
+    gscTransfacAC <- gscTransfacEntrez(annPrb, idName="PROBEID", fac2drDF, by="factor.AC", annTransfacAC)
+    ## getWriteHeatmap_PgseaTTcontrasts: setIDCol
+    annKeggrest2 <- getAnnKeggEntrez("hsa", "org.Hs.eg.db")
+    head(annKeggrest)
+    head(annKeggrest2)
+}
 #### OLD
 # dechiperMeltDNAtime <- function(myGRanges, myBSgenome, Trange=seq(50,100,1)) {
 #     require(myBSgenome)

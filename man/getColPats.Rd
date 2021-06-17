@@ -14,22 +14,19 @@ List of colors, each of length equal to the number of rows in phenoData
 }
 \description{
 Returns columns from phenoData that start with "color_" and have their suffix in common with another column;
-Names of colors are set from the associated column, e.g., \code{list(color_Sex = setNames(color_Sex, Sex), ...)}
+Names of colors are set from the associated column, e.g., \code{list(color_Sex = stats::setNames(color_Sex, Sex), ...)}
 }
 \section{Old implementation}{
 
 \code{
 getColPats <- function(eset) {
-    require(assertthat)
-    require(Biobase)
-    require(tibble)
     assertthat::has_attr(eset, "phenoData")
     colPats <- list()
     aNames <- colnames(Biobase::pData(eset))
     cNames <- aNames[grep("^color_", aNames, perl=TRUE)]
     fNames <- sub("^color_", "", cNames)
     for (i in seq_len(length(fNames))) {
-        colPats[[fNames[i]]] <- setNames(Biobase::pData(eset)[[cNames[i]]], Biobase::pData(eset)[[fNames[i]]])
+        colPats[[fNames[i]]] <- stats::setNames(Biobase::pData(eset)[[cNames[i]]], Biobase::pData(eset)[[fNames[i]]])
     }
     colPats
 }

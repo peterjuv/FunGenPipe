@@ -2,16 +2,20 @@
 % Please edit documentation in R/FunGenPipe.R
 \name{writeExprsGEO}
 \alias{writeExprsGEO}
-\title{Write gene expression values for GEO}
+\title{Return and write gene expression values for GEO}
 \usage{
-writeExprsGEO(esetAnn, gplAccNum, filePath = NULL)
+writeExprsGEO(esetAnn, gplAccNum, filePath = NULL, remGPL = TRUE, ...)
 }
 \arguments{
 \item{esetAnn}{ExpressionSet}
 
 \item{gplAccNum}{Character GEO GPL accession number}
 
-\item{filePath}{Character path/fileName.txt}
+\item{filePath}{Character path/fileName.txt; default NULL}
+
+\item{remGPL}{Delete the downloaded GPL*.soft file; default TRUE}
+
+\item{...}{Further arguments passed to GEOquery::getGEO(...)}
 }
 \value{
 Matrix expression values for GEO.
@@ -19,6 +23,6 @@ Matrix expression values for GEO.
 \description{
 Downloads platform info file from GEO using GPL accession number \code{gplAccNum}.
 Adds platform IDs that are missing from ExpressionSet \code{esetAnn} and sets their values to NA.
-Writes data to tad-delimited file \code{filePath}.
-Uses \code{rownames(esetAnn)} as platform IDs.
+Writes data to tad-delimited file \code{filePath} if specified.
+Uses \code{rownames(esetAnn)} as IDs.
 }
